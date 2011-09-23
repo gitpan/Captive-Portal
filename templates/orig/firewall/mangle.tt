@@ -1,0 +1,27 @@
+#-----------------------------------------------------------------------------------------
+#----------------------------------------------------------------------------------------
+# mangle rules
+#-----------------------------------------------------------------------------------------
+#----------------------------------------------------------------------------------------
+
+# pass all incoming traffic, mangle only outgoing traffic
+sudo iptables -t mangle -I PREROUTING ! -i [%- capture_if -%] -j ACCEPT
+
+# now jump to ...
+sudo iptables -t mangle -A PREROUTING                  -j capo_sessions
+sudo iptables -t mangle -A PREROUTING -m mark --mark 1 -j capo_activity
+sudo iptables -t mangle -A PREROUTING -m mark --mark 1 -j ACCEPT
+
+# now jump to ...
+sudo iptables -t mangle -A PREROUTING                  -j capo_open_map
+sudo iptables -t mangle -A PREROUTING -m mark --mark 1 -j ACCEPT
+
+# now jump to ...
+sudo iptables -t mangle -A PREROUTING                  -j capo_open_services
+sudo iptables -t mangle -A PREROUTING -m mark --mark 1 -j ACCEPT
+
+# now jump to ...
+sudo iptables -t mangle -A PREROUTING                  -j capo_open_clients
+sudo iptables -t mangle -A PREROUTING -m mark --mark 1 -j ACCEPT
+
+# vim: sw=2 ft=sh

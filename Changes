@@ -1,0 +1,41 @@
+0.06    ...
+
+0.05    Mon Jan 3 22:13:10 2011 +0100
+
+    - status Kommando für capo-ctl, requested by Bing
+
+    - I18N, Templates für englisch und deutsch implementiert
+
+    - CSS modification für schmale Endgeräte
+
+    - Such- und Sortierkriterien im admin Bereich, requested by Bing
+
+    - xhtml und css validiert
+
+    - ipv4_aton callback für die Firewalltemplates, damit auch
+      DNS Angaben für Server in der cfg_file möglich
+
+    - modifizierte Firewallrules für den Mailserver
+
+    - PATH wird in den Scripten jetzt doch gesetzt, es gab
+      logische Probleme mit den full-qualified Kommandos
+      sudo, arp und iptables in den Firewall-templates
+
+    - Build.PL tweak, man kann nun auch './Build install' verwenden
+
+    internal only:
+    =============
+    - HTML/Javascript injection-security im username Formularfeld, sigh
+
+    - neuer CONTEXT stash für Parameter Übergabe
+
+    - wieder einmal vereinfachtes exception handling beim run_cmd
+
+0.04    Do 23. Dez 14:31:24 CET 2010
+        This is the first version for public tests
+
+0.01    Mon Nov  8 14:05:39 2010
+        First version, released on an unsuspecting world.
+
+Revision history for Captive-Portal
+

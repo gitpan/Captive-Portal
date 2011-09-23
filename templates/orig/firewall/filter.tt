@@ -1,0 +1,64 @@
+#----------------------------------------------------------------------------------------
+#----------------------------------------------------------------------------------------
+# filter chains
+#----------------------------------------------------------------------------------------
+#----------------------------------------------------------------------------------------
+
+#----------------------------------------------------------------------------------------
+# FORWARD chain
+#
+
+# block 6to4 and ISATAP tunnels
+sudo iptables -t filter -A FORWARD -p 41 -j DROP
+
+# forward incoming traffic to the clients
+sudo iptables -t filter -A FORWARD ! -i [%- capture_if -%] -j ACCEPT
+
+# forward all marked traffic from the clients
+sudo iptables -t filter -A FORWARD -m mark --mark 1 -j ACCEPT
+
+# speed up tcp connections by negative responses
+sudo iptables -t filter -A FORWARD -p tcp -j REJECT --reject-with tcp-reset
+
+# REJECT ALL other
+sudo iptables -t filter -A FORWARD -j REJECT --reject-with icmp-net-prohibited
+
+#----------------------------------------------------------------------------------------
+# INPUT chain, mainly used to throttle incomming connections to tcp port 80
+# and the redirect port. Could also be used for the https, but then with
+# a reasonable burst in order to deliver html, css and images
+#
+
+# never block loopback traffic
+sudo iptables -t filter -A INPUT -i lo -j ACCEPT
+
+[% IF throttle -%]
+
+[% UNLESS throttle_ports;    THROW 'throttle_ports undefined in config_file';    END %]
+[% UNLESS throttle_seconds;  THROW 'throttle_seconds undefined in config_file';  END %]
+[% UNLESS throttle_hitcount; THROW 'throttle_hitcount undefined in config_file'; END %]
+
+# don't throttle already established connections, helps also with http keep-alives
+sudo iptables -t filter -A INPUT -p tcp ! --syn -j ACCEPT
+
+# LOG targets which get dropped by the next rule
+sudo iptables -t filter -A INPUT -p tcp --syn \
+    -m multiport --dports [%- throttle_ports.join(',') -%] \
+    -m recent --name capo_throttle --rcheck \
+    --seconds [%- throttle_seconds -%] --hitcount [%- throttle_hitcount -%] \
+    -m limit --limit 4/minute -j LOG --log-prefix CAPO_THROTTLE:
+
+# throttle/drop new connections
+sudo iptables -t filter -A INPUT -p tcp --syn \
+    -m multiport --dports [%- throttle_ports.join(',') -%] \
+    -m recent --name capo_throttle --rcheck \
+    --seconds [%- throttle_seconds -%] --hitcount [%- throttle_hitcount -%] -j DROP
+
+# at last accept new connections but set/update the recent table
+sudo iptables -t filter -A INPUT -p tcp --syn \
+    -m multiport --dports [%- throttle_ports.join(',') -%] \
+    -m recent --name capo_throttle --set -j ACCEPT
+
+[%- END %]
+
+# vim: sw=2 ft=sh

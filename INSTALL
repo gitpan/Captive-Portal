@@ -1,0 +1,49 @@
+==============================================
+ INSTALLATION instructions for Captive-Portal
+==============================================
+
+To install this Web-App, run the following commands:
+
+	perl Build.PL [--install_base=/usr/local/capo]
+	./Build
+	./Build test
+	./Build install [--verbose]
+	
+NOTICE: /usr/local/capo is the default installation base.
+
+NOTICE: files in directories named 'local' are not overridden, please
+        put your local changes like configs, templates and static html files
+        into the according local directories.
+
+        The search order for config files is:
+          %ENV -> $Bin/../etc/local/... -> $Bin/../etc/...
+
+        The TEMPLATE search order is:
+          $Bin/../templates/local/ -> $bin/../templates/orig/
+
+CONFIGURATION after INSTALLATION
+
+- You must adjust the configuration file in the etc directory to your local situation!
+
+- Captive::Portal needs execute permissions for iptables(8) and ipset(8) to set and change
+  the firewall-rules:
+
+  You must add the following rule to the sudoers file, depending
+  on the username of the http daemon:
+
+    YOUR_WWW_USER ALL=NOPASSWD: /YOUR/PATH/TO/iptables, /YOUR/PATH/TO/ipset
+
+- If you use fping (see USE_FPING config parameter) to check idle sessions
+  before going idle you must add fping to the sudoers file like ipset and
+  iptables, regardless of the suid bit on fping, since we need special timing
+  flags available only for root:
+
+    WWW_USER ALL=NOPASSWD: /PATH/TO/iptables, /PATH/TO/ipset, /PATH/TO/fping
+
+- The default $SESSIONS_DIR is set to '/var/cache/capo'
+  YOUR_WWW_USER must be the owner of this dir with write permissions!
+
+- Don't forget to change the secrets of the admin user and the shared
+  secret for RADIUS authentication!
+
+
