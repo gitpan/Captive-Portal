@@ -47,24 +47,39 @@ ok( my $capo = Captive::Portal->new( cfg_file => 't/etc/ok.pl' ),
 my $mech = Test::WWW::Mechanize::CGI->new;
 $mech->cgi( sub { $capo->run( CGI->new ); } );
 $mech->get_ok(q{http://localhost});
+$mech->title_is('Captive Portal');
+
+$mech = Test::WWW::Mechanize::CGI->new;
+$mech->cgi( sub { $capo->run( CGI->new ); } );
+$mech->get_ok(q{http://localhost/is_running});
+$mech->content_contains('RUNNING');
 
 $mech = Test::WWW::Mechanize::CGI->new;
 $mech->cgi( sub { $capo->run( CGI->new ); } );
 $mech->get_ok(q{http://localhost?username=fake;password=foo;login=1});
+$mech->content_contains('Network access allowed');
 
 $mech = Test::WWW::Mechanize::CGI->new;
 $mech->cgi( sub { $capo->run( CGI->new ); } );
 $mech->get_ok(q{http://localhost/status});
+$mech->content_contains('Summary');
 
 $mech = Test::WWW::Mechanize::CGI->new;
 $mech->cgi( sub { $capo->run( CGI->new ); } );
 $mech->get_ok(q{http://localhost/status?admin_secret=my-secret});
+$mech->content_contains('Sessions');
+
+$mech = Test::WWW::Mechanize::CGI->new;
+$mech->cgi( sub { $capo->run( CGI->new ); } );
+$mech->get_ok(q{http://localhost/status?admin_secret=my-secret;astext=1});
+$mech->content_contains('USERNAME: "fake", IP: "127.0.0.1", MAC: "00:00:00:00:00:00"');
 
 $mech = Test::WWW::Mechanize::CGI->new;
 $mech->cgi( sub { $capo->run( CGI->new ); } );
 $mech->get_ok(q{http://localhost?logout=1});
+$mech->content_contains('successfull logout');
 
 #diag explain $mech;
 
-done_testing();
+done_testing(17);
 

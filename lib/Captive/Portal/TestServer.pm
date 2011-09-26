@@ -9,7 +9,7 @@ Captive::Portal::TestServer - Simple HTTP Server for Captive::Portal Tests
 
 =cut
 
-our $VERSION = '2.10';
+our $VERSION = '2.11';
 
 use parent 'HTTP::Server::Simple::CGI';
 use HTTP::Server::Simple::Static qw(serve_static);
@@ -56,7 +56,7 @@ Karl Gaissmaier, C<< <gaissmai at cpan.org> >>
 
 =head1 LICENSE AND COPYRIGHT
 
-Copyright 2010 Karl Gaissmaier, all rights reserved.
+Copyright 2010-2011 Karl Gaissmaier, all rights reserved.
 
 This distribution is free software; you can redistribute it and/or modify it
 under the terms of either:

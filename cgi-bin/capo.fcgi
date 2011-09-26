@@ -3,7 +3,7 @@
 use strict;
 use warnings;
 
-our $VERSION = '2.10';
+our $VERSION = '2.11';
 
 =head1 NAME
 
@@ -32,25 +32,19 @@ $ENV{PATH} = '/sbin:/bin:/usr/sbin:/usr/bin';
 
 =head1 CONFIGURATION
 
-=over 4
-
-=item B<Captive::Portal config file>
-
-By default
+The Captive::Portal config file is searched in the following places:
 
     $ENV{CAPTIVE_PORTAL_CONFIG} ||
     $Bin/../etc/local/config.pl ||
     $Bin/../etc/config.pl
 
-=item B<Log::Log4perl config file>
+=head1 LOGGING
 
-By default
+The Log::Log4perl config file is searched in the following places:
 
     $ENV{CAPTIVE_PORTAL_LOG4PERL}   ||
     $Bin/../etc/local/log4perl.conf ||
     $Bin/../etc/log4perl.conf
-
-=back
 
 =cut
 
@@ -74,6 +68,52 @@ if ( $log4perl && -f $log4perl ) {
 else {
     Log::Log4perl->easy_init($DEBUG);
 }
+
+=head1 CLIENT API
+
+=over
+
+=item https://capo.acme.org/capo
+
+Return the I<splash-page> with login form.
+
+=item https://capo.acme.org/capo?login=username;password=secret
+
+Login the user, return the I<active-page> with logout form.
+
+=item https://capo.acme.org/capo?logout=true
+
+Logout the user, return the I<splash-page> with login form.
+
+=back
+
+=head1 ADMIN API
+
+=over
+
+=item https://capo.acme.org/capo/status
+
+Return the I<summary-status-page> with admin-secret form.
+
+=item https://capo.acme.org/capo/status?admin_secret=secret
+
+Return the I<detail-status-page>.
+
+=item https://capo.acme.org/capo/status?admin_secret=secret;astext=true
+
+Return the I<detail-status-page> as text/plain.
+
+=item https://capo.acme.org/capo/is_running
+
+Return the number of active clients (ipset entries) as text/plain.
+
+Example:
+
+  RUNNING 1340 rules loaded
+
+=back
+
+=cut
 
 #####################################################################
 # create Captive::Portal object and enter request loop

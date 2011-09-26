@@ -9,7 +9,7 @@ Captive::Portal::Role::Utils - common utils for Captive::Portal
 
 =cut
 
-our $VERSION = '2.10';
+our $VERSION = '2.11';
 
 use Log::Log4perl qw(:easy);
 use Capture::Tiny qw(capture);
@@ -307,6 +307,7 @@ sub choose_language {
 Wrapper to run external commands, capture and return (stdout/stderr).
 
 Last optional parameter item is a hashref with options for run_cmd itself:
+
     {
         timeout           => 500_000,    # default 500_000us,
         ignore_exit_codes => [],         # exit codes without exception
@@ -409,10 +410,9 @@ sub run_cmd {
 Template callback converting DNS name(s) to ip address(es), see perldoc Template::Manual::Variables. With this helper, DNS-names in firewall templates are translated to ipv4 adresses.
 
 Example:
- '10.10.10.10'  ->  '10.10.10.10'
 
- 'www.acme.rog' -> [10.1.2.3, 10.1.2.4, 10.1.2.5, ...]
-
+ '10.10.10.10'                    ->  '10.10.10.10'
+ 'www.acme.rog'                   -> [10.1.2.3, 10.1.2.4, 10.1.2.5, ...]
  [ftp.uni-ulm.de, www.uni-ulm.de] -> [134.60.1.5, 134.60.1.25]
 
 =cut
@@ -474,7 +474,7 @@ Karl Gaissmaier, C<< <gaissmai at cpan.org> >>
 
 =head1 LICENSE AND COPYRIGHT
 
-Copyright 2010, 2011 Karl Gaissmaier, all rights reserved.
+Copyright 2010-2011 Karl Gaissmaier, all rights reserved.
 
 This distribution is free software; you can redistribute it and/or modify it
 under the terms of either:

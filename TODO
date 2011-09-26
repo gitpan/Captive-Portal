@@ -1,4 +1,0 @@
-- capo_ctl list should show the open maps
-- narrow version numbers in Build.Pl for requires 
-- PLAN: get rid of buggy Capture::Tiny, use ripped code from Test::Command
-- PLAN: build a http.conf template

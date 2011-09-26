@@ -3,7 +3,47 @@
 use strict;
 use warnings;
 
-our $VERSION = '2.10';
+our $VERSION = '2.11';
+
+=head1 NAME
+
+test-server.pl - Single threaded HTTP/CGI testserver.
+
+=head1 DESCRIPTION
+
+Don't use it in production, SSL/TLS and FCGI not supported.
+
+=head1 SYNOPSIS
+
+ test-server.pl [-p -port f capo.cfg] [-l log4perl.cfg]
+
+=head1 OPTIONS
+
+=over 4
+
+=item B<--port> 3333
+
+HTTP listen port. If not defined listens on port 3333
+
+=item B<--file> capo.cfg
+
+Captive::Portal config file. If not defined looks for the following files
+
+    $ENV{CAPTIVE_PORTAL_CONFIG} ||
+    $Bin/../etc/local/config.pl ||
+    $Bin/../etc/config.pl
+
+=item B<--logg> log4perl.cfg
+
+Log::Log4perl config file. If not defined looks for the following files
+
+    $ENV{CAPTIVE_PORTAL_LOG4PERL}   ||
+    $Bin/../etc/local/log4perl.conf ||
+    $Bin/../etc/log4perl.conf
+
+=back
+
+=cut
 
 use sigtrap qw(die untrapped normal-signals);
 
@@ -27,9 +67,12 @@ my $log4perl =
   || -e "$Bin/../etc/local/log4perl.conf" && "$Bin/../etc/local/log4perl.conf"
   || -e "$Bin/../etc/log4perl.conf" && "$Bin/../etc/log4perl.conf";
 
+my $port = 3333;
+
 GetOptions(
     'loggfile=s' => \$log4perl,
     'file=s'     => \$cfg_file,
+    'port=i'     => \$port,
 ) or usage();
 
 usage('configfile missing and CAPTIVE_PORTAL_CONFIG not set')
@@ -45,7 +88,6 @@ else {
 DEBUG("create new Captive::Portal object ...");
 my $capo = Captive::Portal->new( cfg_file => $cfg_file );
 
-my $port = 3333;
 DEBUG("create new Captive::Portal::TestServer object ...");
 my $server = Captive::Portal::TestServer->new($port);
 
@@ -57,6 +99,26 @@ INFO("You can connect the server on Port: $port");
 $server->run;
 
 sub usage {
-    die "$Script [-f config_file -l log4perl.cfg]\n";
+    die "$Script [-p port -f config_file -l log4perl.cfg]\n";
 }
 
+=head1 AUTHOR
+
+Karl Gaissmaier, C<< <gaissmai at cpan.org> >>
+
+=head1 LICENSE AND COPYRIGHT
+
+Copyright 2010-2011 Karl Gaissmaier, all rights reserved.
+
+This distribution is free software; you can redistribute it and/or modify it
+under the terms of either:
+
+a) the GNU General Public License as published by the Free Software
+Foundation; either version 2, or (at your option) any later version, or
+
+b) the Artistic License version 2.0.
+
+The full text of the license can be found in the LICENSE file included
+with this distribution.
+
+=cut

@@ -3,8 +3,31 @@
 use strict;
 use warnings;
 
-our $VERSION = '2.10';
+our $VERSION = '2.11';
 
+=head1 NAME
+
+mock-server.pl - script to test the API
+
+=head1 DESCRIPTION
+
+Just returns the HTML page for the requested URL on STDOUT and exits.
+
+=head1 SYNOPSIS
+
+ mock-server.pl [-f capo.cfg] [-l log4perl.cfg] URL
+
+Example URL's:
+
+  'http://localhost'
+  'http://localhost?login=true;username=foo;password=bar'
+  'http://localhost?logout=true'
+
+  'http://localhost/status=true'
+  'http://localhost/status=true;admin_secret=my-secret'
+  'http://localhost/status=true;admin_secret=my-secret;astext=true'
+
+=cut
 use sigtrap qw(die untrapped normal-signals);
 
 use FindBin qw($Bin $Script);
@@ -76,3 +99,23 @@ Example URL's:
 EO_USAGE
 }
 
+=head1 AUTHOR
+
+Karl Gaissmaier, C<< <gaissmai at cpan.org> >>
+
+=head1 LICENSE AND COPYRIGHT
+
+Copyright 2010-2011 Karl Gaissmaier, all rights reserved.
+
+This distribution is free software; you can redistribute it and/or modify it
+under the terms of either:
+
+a) the GNU General Public License as published by the Free Software
+Foundation; either version 2, or (at your option) any later version, or
+
+b) the Artistic License version 2.0.
+
+The full text of the license can be found in the LICENSE file included
+with this distribution.
+
+=cut

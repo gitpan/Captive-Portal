@@ -9,7 +9,7 @@ Captive::Portal::Role::Session - Session methods for Captive::Portal
 
 =cut
 
-our $VERSION = '2.10';
+our $VERSION = '2.11';
 
 use Log::Log4perl qw(:easy);
 use JSON qw();
@@ -209,11 +209,12 @@ Wrapper for get_lock_handle().
 Return a filehandle to the clients session file with the requested lock assigned. There is no unlock required, after destroying the filehandle the file is closed and the lock released.
 
 Named parameters:
- key:            ip address of session
- shared:         shared lock, defaults to exclusive lock
- blocking:       blocking lock request, defaults to blocking
- try:            number of retries in nonblocking mode, defaults to 1 retry
- timeout:        timeout in blocking mode, defaults to 1s
+
+ key      => ip address of session
+ shared   => shared lock, defaults to exclusive lock
+ blocking => blocking lock request, defaults to blocking
+ try      => number of retries in nonblocking mode, defaults to 1 retry
+ timeout  => timeout in blocking mode, defaults to 1s
 
 =cut
 
@@ -388,7 +389,7 @@ Karl Gaissmaier, C<< <gaissmai at cpan.org> >>
 
 =head1 LICENSE AND COPYRIGHT
 
-Copyright 2010, 2011 Karl Gaissmaier, all rights reserved.
+Copyright 2010-2011 Karl Gaissmaier, all rights reserved.
 
 This distribution is free software; you can redistribute it and/or modify it
 under the terms of either:

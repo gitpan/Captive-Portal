@@ -9,7 +9,7 @@ Captive::Portal::Role::Locking - lock handling for Captive::Portal
 
 =cut
 
-our $VERSION = '2.10';
+our $VERSION = '2.11';
 
 use Log::Log4perl qw(:easy);
 use Try::Tiny;
@@ -32,11 +32,12 @@ CaPo locking and transaction handling.
 Returns a filehandle with the requested lock assigned. There is no unlock, after destroying the filehandle the file is automatically closed and the lock released.
 
 Named parameters:
- file:           filename to lock, created if not existing
- shared:         shared lock, defaults to exclusive lock
- blocking:       blocking lock request, defaults to blocking
- try:            number of retries in nonblocking mode, defaults to 1 retry
- timeout:        timeout in blocking mode, defaults to 1s
+
+ file     => filename to lock, created if not existing
+ shared   => shared lock, defaults to exclusive lock
+ blocking => blocking lock request, defaults to blocking
+ try      => number of retries in nonblocking mode, defaults to 1 retry
+ timeout  => timeout in blocking mode, defaults to 1s
 
 =cut 
 
@@ -171,7 +172,7 @@ Karl Gaissmaier, C<< <gaissmai at cpan.org> >>
 
 =head1 LICENSE AND COPYRIGHT
 
-Copyright 2010, 2011 Karl Gaissmaier, all rights reserved.
+Copyright 2010-2011 Karl Gaissmaier, all rights reserved.
 
 This distribution is free software; you can redistribute it and/or modify it
 under the terms of either:

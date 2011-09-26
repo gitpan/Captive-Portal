@@ -16,14 +16,14 @@ NOTICE: files in directories named 'local' are not overridden, please
         into the according local directories.
 
         The search order for config files is:
-          %ENV -> $Bin/../etc/local/... -> $Bin/../etc/...
+	 $ENV{CAPTIVE_PORTAL_CONFIG} -> $Bin/../etc/local/... -> $Bin/../etc/...
 
         The TEMPLATE search order is:
           $Bin/../templates/local/ -> $bin/../templates/orig/
 
 CONFIGURATION after INSTALLATION
 
-- You must adjust the configuration file in the etc directory to your local situation!
+- You must adjust the configuration file to your local situation!
 
 - Captive::Portal needs execute permissions for iptables(8) and ipset(8) to set and change
   the firewall-rules:
@@ -41,7 +41,8 @@ CONFIGURATION after INSTALLATION
     WWW_USER ALL=NOPASSWD: /PATH/TO/iptables, /PATH/TO/ipset, /PATH/TO/fping
 
 - The default $SESSIONS_DIR is set to '/var/cache/capo'
-  YOUR_WWW_USER must be the owner of this dir with write permissions!
+  You must create the $SESSIONS_DIR directory and
+  YOUR_WWW_USER must be the owner of this directory with write permissions!
 
 - Don't forget to change the secrets of the admin user and the shared
   secret for RADIUS authentication!
