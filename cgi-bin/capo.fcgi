@@ -3,7 +3,7 @@
 use strict;
 use warnings;
 
-our $VERSION = '2.11';
+our $VERSION = '2.12';
 
 =head1 NAME
 
@@ -73,17 +73,17 @@ else {
 
 =over
 
-=item https://capo.acme.org/capo
+=item C<https://capo.acme.org/capo>
 
-Return the I<splash-page> with login form.
+Return the B<splash-page> with login form.
 
-=item https://capo.acme.org/capo?login=username;password=secret
+=item C<https://capo.acme.org/capo?login=username;password=secret>
 
-Login the user, return the I<active-page> with logout form.
+Login the user, return the B<active-page> with logout form.
 
-=item https://capo.acme.org/capo?logout=true
+=item C<https://capo.acme.org/capo?logout=true>
 
-Logout the user, return the I<splash-page> with login form.
+Logout the user, return the B<splash-page> with login form.
 
 =back
 
@@ -91,19 +91,19 @@ Logout the user, return the I<splash-page> with login form.
 
 =over
 
-=item https://capo.acme.org/capo/status
+=item C<https://capo.acme.org/capo/status>
 
-Return the I<summary-status-page> with admin-secret form.
+Return the B<summary-status-page> with admin-secret form.
 
-=item https://capo.acme.org/capo/status?admin_secret=secret
+=item C<https://capo.acme.org/capo/status?admin_secret=secret>
 
-Return the I<detail-status-page>.
+Return the B<detail-status-page>.
 
-=item https://capo.acme.org/capo/status?admin_secret=secret;astext=true
+=item C<https://capo.acme.org/capo/status?admin_secret=secret;astext=true>
 
-Return the I<detail-status-page> as text/plain.
+Return the B<detail-status-page> as text/plain.
 
-=item https://capo.acme.org/capo/is_running
+=item C<https://capo.acme.org/capo/is_running>
 
 Return the number of active clients (ipset entries) as text/plain.
 
@@ -142,8 +142,5 @@ a) the GNU General Public License as published by the Free Software
 Foundation; either version 2, or (at your option) any later version, or
 
 b) the Artistic License version 2.0.
-
-The full text of the license can be found in the LICENSE file included
-with this distribution.
 
 =cut

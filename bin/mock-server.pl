@@ -3,7 +3,7 @@
 use strict;
 use warnings;
 
-our $VERSION = '2.11';
+our $VERSION = '2.12';
 
 =head1 NAME
 
@@ -114,8 +114,5 @@ a) the GNU General Public License as published by the Free Software
 Foundation; either version 2, or (at your option) any later version, or
 
 b) the Artistic License version 2.0.
-
-The full text of the license can be found in the LICENSE file included
-with this distribution.
 
 =cut

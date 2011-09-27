@@ -8,7 +8,7 @@ ABSTRACT
     <http://en.wikipedia.org/wiki/Captive_Portal>
 
 DESCRIPTION
-    Captive::Portal a.k.a. CaPo is a Hotspot solution for Linux Gateways.
+    Captive::Portal a.k.a. CaPo is a hotspot solution for Linux Gateways.
     CaPo is developed and in service at Ulm University for thousands of
     concurrent users. The main focus is scalability, performance, simple
     administration and user-friendliness.
@@ -100,12 +100,12 @@ LOGGING
 LOCAL ADAPTATION
     The HTML files are generated from templates (Template-Toolkit syntax).
     You should use the original template files as stanzas and put the
-    locally changed versions into the local template tree. See template
+    locally changed versions into the local template tree. The template
     search order prefers the local templates.
 
     The firewall rules and commands are also generated from template files.
-    Normally there should no need to change the firewall rules but it would
-    be possible without changing the perl code.
+    Normally there is no need to change the firewall rules but it would be
+    possible without changing the perl code.
 
 I18N
     There exists a template tree for each supported language. Some
@@ -137,7 +137,4 @@ LICENSE AND COPYRIGHT
     Foundation; either version 2, or (at your option) any later version, or
 
     b) the Artistic License version 2.0.
-
-    The full text of the license can be found in the LICENSE file included
-    with this distribution.
 

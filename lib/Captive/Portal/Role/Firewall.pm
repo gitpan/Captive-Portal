@@ -13,7 +13,7 @@ Does all stuff needed to dynamically update iptables and ipset.
 
 =cut
 
-our $VERSION = '2.11';
+our $VERSION = '2.12';
 
 use Log::Log4perl qw(:easy);
 use Try::Tiny;
@@ -865,9 +865,6 @@ a) the GNU General Public License as published by the Free Software
 Foundation; either version 2, or (at your option) any later version, or
 
 b) the Artistic License version 2.0.
-
-The full text of the license can be found in the LICENSE file included
-with this distribution.
 
 =cut
 

@@ -3,7 +3,7 @@ package Captive::Portal;
 use strict;
 use warnings;
 
-our $VERSION = '2.11';
+our $VERSION = '2.12';
 
 =head1 NAME
 
@@ -17,7 +17,7 @@ L<http://en.wikipedia.org/wiki/Captive_Portal>
 
 =head1 DESCRIPTION
 
-Captive::Portal a.k.a. CaPo is a Hotspot solution for Linux Gateways. CaPo is developed and in service at Ulm University for thousands of concurrent users. The main focus is scalability, performance, simple administration and user-friendliness.
+Captive::Portal a.k.a. CaPo is a hotspot solution for Linux Gateways. CaPo is developed and in service at Ulm University for thousands of concurrent users. The main focus is scalability, performance, simple administration and user-friendliness.
 
 The goals were achieved by using scalable technologies like ipset(8) instead of native iptables(8), FastCGI instead of CGI and a fine tuned concurrent session handling based on the filesystem locking mechanism without any need for an additional RDBMS.
 
@@ -97,9 +97,9 @@ Logging is handled by the Log::Log4perl module. The logging configuration is sea
 
 =head1 LOCAL ADAPTATION
 
-The HTML files are generated from templates (Template-Toolkit syntax). You should use the original template files as stanzas and put the locally changed versions into the local template tree. See template search order prefers the local templates.
+The HTML files are generated from templates (Template-Toolkit syntax). You should use the original template files as stanzas and put the locally changed versions into the local template tree. The template search order prefers the local templates.
 
-The firewall rules and commands are also generated from template files. Normally there should no need to change the firewall rules but it would be possible without changing the perl code.
+The firewall rules and commands are also generated from template files. Normally there is no need to change the firewall rules but it would be possible without changing the perl code.
 
 =head1 I18N
 
@@ -117,6 +117,7 @@ use Role::Basic qw(with);
 with qw(
   Captive::Portal::Role::Config
   Captive::Portal::Role::Utils
+  Captive::Portal::Role::I18N
   Captive::Portal::Role::AuthenSimple
   Captive::Portal::Role::Locking
   Captive::Portal::Role::Session
@@ -947,8 +948,5 @@ a) the GNU General Public License as published by the Free Software
 Foundation; either version 2, or (at your option) any later version, or
 
 b) the Artistic License version 2.0.
-
-The full text of the license can be found in the LICENSE file included
-with this distribution.
 
 =cut

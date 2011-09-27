@@ -5,11 +5,11 @@ use warnings;
 
 =head1 NAME
 
-Captive::Portal::Role::AuthenSimple - AuthenSimple adapter for Captive::Portal
+Captive::Portal::Role::AuthenSimple - Authen::Simple adapter for Captive::Portal
 
 =cut
 
-our $VERSION = '2.11';
+our $VERSION = '2.12';
 
 use Log::Log4perl qw(:easy);
 use Authen::Simple qw();
@@ -93,6 +93,10 @@ sub authenticate {
 
 =back
 
+=head1 SEE ALSO
+
+L<Authen::Simple>
+
 =head1 AUTHOR
 
 Karl Gaissmaier, C<< <gaissmai at cpan.org> >>
@@ -108,9 +112,6 @@ a) the GNU General Public License as published by the Free Software
 Foundation; either version 2, or (at your option) any later version, or
 
 b) the Artistic License version 2.0.
-
-The full text of the license can be found in the LICENSE file included
-with this distribution.
 
 =cut
 

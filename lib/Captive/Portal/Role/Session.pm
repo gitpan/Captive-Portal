@@ -9,7 +9,7 @@ Captive::Portal::Role::Session - Session methods for Captive::Portal
 
 =cut
 
-our $VERSION = '2.11';
+our $VERSION = '2.12';
 
 use Log::Log4perl qw(:easy);
 use JSON qw();
@@ -28,6 +28,24 @@ requires qw(
 =head1 DESCRIPTION
 
 IP addresses of clients must be unique. They are determined by the HTTP-Parameter I<REMOTE_ADDR>. The corresponding MAC-address is determined from the ARP-table. If there are duplicate IP-addresses for different MAC-addresses something bad is happening (ARP-spoofing, ...). Captive::Portal warns on duplicate IP-addresses.
+
+Active sessions have corresponding IP/MAC entries in the B<capo_sessions_ipset>.
+
+Session state is recorded on disc under the $SESSIONS_DIR. The session state is JSON encoded.
+
+Example: active session
+
+  {
+      "STATE"      : "active",
+      "START_TIME" : 1317106093,
+      "STOP_TIME"  : "",
+      "IDLE_SINCE" : null,
+      "USERNAME"   : "foo",
+      "IP"         : "134.60.239.90",
+      "MAC"        : "F0:F4:69:17:89:DE",
+      "USER_AGENT" : "Mozilla/5.0 ... Safari/534.50",
+      "COOKIE"     : "202ceeee8c0ec85869dbac19c57c3c5e"
+  }
 
 =head1 ROLES
 
@@ -398,9 +416,6 @@ a) the GNU General Public License as published by the Free Software
 Foundation; either version 2, or (at your option) any later version, or
 
 b) the Artistic License version 2.0.
-
-The full text of the license can be found in the LICENSE file included
-with this distribution.
 
 =cut
 
