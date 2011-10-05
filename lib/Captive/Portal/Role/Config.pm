@@ -5,7 +5,7 @@ use warnings;
 
 =head1 NAME
 
-Captive::Portal::Role::Config - Config reader for Captive::Portal
+Captive::Portal::Role::Config - config reader for Captive::Portal
 
 =head1 DESCRIPTION
 
@@ -14,7 +14,7 @@ Config file parser and storage for cfg hash. The configuration syntax is perl.
 
 =cut
 
-our $VERSION = '2.12';
+our $VERSION = '2.13';
 
 use Log::Log4perl qw(:easy);
 use FindBin qw($Bin);

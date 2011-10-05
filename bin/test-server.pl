@@ -3,11 +3,11 @@
 use strict;
 use warnings;
 
-our $VERSION = '2.12';
+our $VERSION = '2.13';
 
 =head1 NAME
 
-test-server.pl - Single threaded HTTP/CGI testserver.
+test-server.pl - single threaded HTTP/CGI testserver
 
 =head1 DESCRIPTION
 

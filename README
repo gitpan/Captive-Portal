@@ -22,9 +22,9 @@ DESCRIPTION
 
 ALGORITHM IN SHORT
     1. Internal NAT redirect
-        HTTP-traffic on the gateways inside interface - from unknown clients
-        - is redirected by an iptables(8) NAT-rule to a port the HTTP-server
-        is listen, e.g.
+        HTTP-traffic on the gateways inside interface - from unauthenticated
+        clients - is redirected by an iptables(8) NAT-rule to a port the
+        HTTP-server is listen, e.g.
 
          iptables -t nat -A PREROUTING -i eth1 -p tcp --dport 80 -j REDIRECT --to-port 5281
 
@@ -37,13 +37,21 @@ ALGORITHM IN SHORT
              RewriteRule   .*  https://gateway.acme.org/capo/? [R,L]
          </VirtualHost>
 
+        This results in a HTTP/1.1 302 Found reply:
+
+            GET / HTTP/1.1
+            Host: www.google.de
+
+            HTTP/1.1 302 Found
+            Location: https://gateway.acme.org/capo/
+
     3. SESSION LOGIN
-        The *capo.fcgi* script offers a login/splash page. After successful
+        The *capo.fcgi* script offers a splash/login page. After successful
         login the firewall is dynamically changed to allow this clients
         IP/MAC tuple for internet access.
 
     4. SESSION LOGOUT
-        The capo.fcgi script offers a status/logut page. After successful
+        The capo.fcgi script offers a status/logout page. After successful
         logout the firewall is dynamically changed to disallow this IP/MAC
         tuple for internet access.
 

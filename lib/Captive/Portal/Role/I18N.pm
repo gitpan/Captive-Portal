@@ -9,9 +9,10 @@ Captive::Portal::Role::I18N - utils for internationalization
 
 =cut
 
-our $VERSION = '2.12';
+our $VERSION = '2.13';
 
 use Log::Log4perl qw(:easy);
+use Scalar::Util qw(looks_like_number);
 
 use Role::Basic;
 requires qw(cfg);

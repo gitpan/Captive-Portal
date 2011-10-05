@@ -5,7 +5,7 @@ use warnings;
 
 =head1 NAME
 
-Captive::Portal::Role::Firewall - Firewall methods for Captive::Portal
+Captive::Portal::Role::Firewall - firewall methods for Captive::Portal
 
 =head1 DESCRIPTION
 
@@ -13,7 +13,7 @@ Does all stuff needed to dynamically update iptables and ipset.
 
 =cut
 
-our $VERSION = '2.12';
+our $VERSION = '2.13';
 
 use Log::Log4perl qw(:easy);
 use Try::Tiny;

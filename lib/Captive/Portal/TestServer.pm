@@ -5,11 +5,11 @@ use warnings;
 
 =head1 NAME
 
-Captive::Portal::TestServer - Simple HTTP Server for Captive::Portal Tests
+Captive::Portal::TestServer - simple HTTP Server for Captive::Portal tests
 
 =cut
 
-our $VERSION = '2.12';
+our $VERSION = '2.13';
 
 use parent 'HTTP::Server::Simple::CGI';
 use HTTP::Server::Simple::Static qw(serve_static);

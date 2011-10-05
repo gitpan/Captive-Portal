@@ -9,12 +9,11 @@ Captive::Portal::Role::Utils - common utils for Captive::Portal
 
 =cut
 
-our $VERSION = '2.12';
+our $VERSION = '2.13';
 
 use Log::Log4perl qw(:easy);
 use Capture::Tiny qw(capture);
 use Try::Tiny;
-use Scalar::Util qw(looks_like_number);
 use Time::HiRes qw(usleep ualarm);
 use Socket qw(inet_ntoa);
 use Net::hostent;

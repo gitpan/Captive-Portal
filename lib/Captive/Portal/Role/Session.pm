@@ -5,11 +5,11 @@ use warnings;
 
 =head1 NAME
 
-Captive::Portal::Role::Session - Session methods for Captive::Portal
+Captive::Portal::Role::Session - session methods for Captive::Portal
 
 =cut
 
-our $VERSION = '2.12';
+our $VERSION = '2.13';
 
 use Log::Log4perl qw(:easy);
 use JSON qw();

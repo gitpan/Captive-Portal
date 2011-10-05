@@ -43,11 +43,10 @@
      </p>
 
      <p class="right">
-     <a href="http://search.cpan.org/search?query=Captive::Portal">Captive::Portal</a>
+     <a href="http://search.cpan.org/~gaissmai/Captive-Portal/">Captive::Portal</a>
      steht auf den Schultern von Riesen:
      <a href="http://www.perl.org/">Perl</a>,
-     <a href="http://www.linuxfoundation.org/">Linux</a> und
-     <a href="http://www.apache.org/">Apache</a>
+     <a href="http://www.linuxfoundation.org/">Linux</a>
      </p>
 
     </div>

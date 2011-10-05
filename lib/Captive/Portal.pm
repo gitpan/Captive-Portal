@@ -3,7 +3,7 @@ package Captive::Portal;
 use strict;
 use warnings;
 
-our $VERSION = '2.12';
+our $VERSION = '2.13';
 
 =head1 NAME
 
@@ -29,7 +29,7 @@ CaPo is compatible with any FastCGI enabled HTTP(S)-server.
 
 =item 1. Internal NAT redirect
 
-HTTP-traffic on the gateways inside interface - from unknown clients - is redirected by an iptables(8) NAT-rule to a port the HTTP-server is listen, e.g.
+HTTP-traffic on the gateways inside interface - from unauthenticated clients - is redirected by an iptables(8) NAT-rule to a port the HTTP-server is listen, e.g.
 
  iptables -t nat -A PREROUTING -i eth1 -p tcp --dport 80 -j REDIRECT --to-port 5281
 
@@ -42,13 +42,21 @@ The HTTP-server redirects the HTTP-request by a rewrite rule to an HTTPS-request
      RewriteRule   .*  https://gateway.acme.org/capo/? [R,L]
  </VirtualHost>
 
+This results in a B<HTTP/1.1 302 Found> reply:
+
+    GET / HTTP/1.1
+    Host: www.google.de
+
+    HTTP/1.1 302 Found
+    Location: https://gateway.acme.org/capo/
+
 =item 3. SESSION LOGIN
 
-The I<capo.fcgi> script offers a login/splash page. After successful login the firewall is dynamically changed to allow this clients IP/MAC tuple for internet access.
+The I<capo.fcgi> script offers a splash/login page. After successful login the firewall is dynamically changed to allow this clients IP/MAC tuple for internet access.
 
 =item 4.  SESSION LOGOUT
 
-The capo.fcgi script offers a status/logut page. After successful logout the firewall is dynamically changed to disallow this IP/MAC tuple for internet access.
+The capo.fcgi script offers a status/logout page. After successful logout the firewall is dynamically changed to disallow this IP/MAC tuple for internet access.
 
 =item 5. SESSION IDLE
 
@@ -256,7 +264,7 @@ sub run {
 
 ##############################################
 # dispatch this request to the proper handler
-# different actions can be requestet by CGI parameters or path_info
+# different actions can be requested by CGI parameters or path_info
 #
 # status:     show a short status page
 # is_running: show in plain text numbers of active sessions
