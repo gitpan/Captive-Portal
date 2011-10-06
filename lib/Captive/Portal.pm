@@ -3,7 +3,7 @@ package Captive::Portal;
 use strict;
 use warnings;
 
-our $VERSION = '2.13';
+our $VERSION = '2.14';
 
 =head1 NAME
 
@@ -861,8 +861,6 @@ sub is_running_view {
     $self->{CTX}{HEADER} =
       $query->header( -type => 'text/plain', -charset => 'UTF-8' );
 
-    my $session_rules_count = $self->{CTX}{FW_STATUS};
-
     if ( defined $self->{CTX}{FW_STATUS} ) {
         $self->{CTX}{BODY} =
           "RUNNING $self->{CTX}{FW_STATUS} active sessions";
@@ -914,7 +912,7 @@ sub error_page_500 {
 __ERROR_MSG__
       </div>
       <div class="footer">
-	Powered by <a href="http://search.cpan.org/">Captive::Portal</a>
+	Powered by <a href="http://search.cpan.org/~gaissmai/Captive-Portal/">Captive::Portal</a>
       </div>
     </div>
   </body>

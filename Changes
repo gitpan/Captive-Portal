@@ -1,5 +1,8 @@
 Revision history for Captive::Portal
 
+2.14	Thu Oct 6 10:52:42 2011 +0200
+	* fixed minor documentation bugs
+
 2.13	Wed Oct 5 17:55:07 2011 +0200
 	* minor bug, Scalar::Util in role I18N missing
 

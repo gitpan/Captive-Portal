@@ -3,7 +3,7 @@
 use strict;
 use warnings;
 
-our $VERSION = '2.13';
+our $VERSION = '2.14';
 
 =head1 NAME
 
@@ -282,7 +282,7 @@ sub list_sessions {
     print "IPSET MEMBERS:\n";
     print '-' x 80 . "\n";
 
-    if ( not $capo->fw_status ) {
+    if ( not defined $capo->fw_status ) {
         print "Firewall stopped!\n";
     }
     else {
