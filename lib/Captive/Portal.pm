@@ -3,7 +3,7 @@ package Captive::Portal;
 use strict;
 use warnings;
 
-our $VERSION = '2.14';
+our $VERSION = '2.15';
 
 =head1 NAME
 

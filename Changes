@@ -1,5 +1,8 @@
 Revision history for Captive::Portal
 
+2.15	Thu, 06 Oct 2011 12:12:00 +0200
+	* capo.fcgi: put scriptname in process table
+
 2.14	Thu Oct 6 10:52:42 2011 +0200
 	* fixed minor documentation bugs
 

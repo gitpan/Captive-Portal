@@ -9,7 +9,7 @@ Captive::Portal::TestServer - simple HTTP Server for Captive::Portal tests
 
 =cut
 
-our $VERSION = '2.14';
+our $VERSION = '2.15';
 
 use parent 'HTTP::Server::Simple::CGI';
 use HTTP::Server::Simple::Static qw(serve_static);

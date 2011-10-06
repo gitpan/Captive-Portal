@@ -3,7 +3,7 @@
 use strict;
 use warnings;
 
-our $VERSION = '2.14';
+our $VERSION = '2.15';
 
 =head1 NAME
 
@@ -21,7 +21,7 @@ This script is started by the HTTP server. It can be used as a simple CGI script
 
 use sigtrap qw(die untrapped normal-signals);
 
-use FindBin qw($Bin);
+use FindBin qw($Bin $Script);
 use lib "$Bin/../lib";
 
 use Log::Log4perl qw(:easy);
@@ -47,6 +47,11 @@ The Log::Log4perl config file is searched in the following places:
     $Bin/../etc/log4perl.conf
 
 =cut
+
+#####################################################################
+# put scriptname in process table instead of plain 'perl'
+#####################################################################
+$0 = $Script;
 
 #####################################################################
 # search for config files in default places
