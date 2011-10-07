@@ -3,7 +3,7 @@ package Captive::Portal;
 use strict;
 use warnings;
 
-our $VERSION = '2.15';
+our $VERSION = '2.16';
 
 =head1 NAME
 
@@ -17,23 +17,27 @@ L<http://en.wikipedia.org/wiki/Captive_Portal>
 
 =head1 DESCRIPTION
 
-Captive::Portal a.k.a. CaPo is a hotspot solution for Linux Gateways. CaPo is developed and in service at Ulm University for thousands of concurrent users. The main focus is scalability, performance, simple administration and user-friendliness.
+Captive::Portal a.k.a. CaPo is a hotspot solution for Linux Gateways. CaPo is developed and in service at Ulm University for thousands of concurrent users.
 
-The goals were achieved by using scalable technologies like ipset(8) instead of native iptables(8), FastCGI instead of CGI and a fine tuned concurrent session handling based on the filesystem locking mechanism without any need for an additional RDBMS.
+The main focus is scalability, performance, simple administration and user-friendliness. The goals have been achieved by using scalable technologies like ipset/iptables, FastCGI/CGI and a fine tuned concurrent session handling based on the filesystem locking mechanism without any need for an additional RDBMS.
 
-CaPo is compatible with any FastCGI enabled HTTP(S)-server.
+CaPo is compatible with any FastCGI/CGI enabled HTTPS-server.
 
 =head1 ALGORITHM IN SHORT
 
 =over 4
 
-=item 1. Internal NAT redirect
+=item 1. Access Denied
 
-HTTP-traffic on the gateways inside interface - from unauthenticated clients - is redirected by an iptables(8) NAT-rule to a port the HTTP-server is listen, e.g.
+Only selected protocols like DHCP/DNS/NTP/IMAPS/IPSec/... to selected servers are allowed for unauthenticated clients.
+
+=item 2. Internal NAT redirect
+
+HTTP-traffic on the gateways inside interface - from unauthenticated clients - is redirected by an iptables(8) NAT-rule to a port the HTTP-server is listening, e.g.
 
  iptables -t nat -A PREROUTING -i eth1 -p tcp --dport 80 -j REDIRECT --to-port 5281
 
-=item 2. HTTP to HTTPS redirect
+=item 3. External HTTP redirect
 
 The HTTP-server redirects the HTTP-request by a rewrite rule to an HTTPS-request for the CaPo script I<capo.fcgi> , e.g.
 
@@ -42,31 +46,37 @@ The HTTP-server redirects the HTTP-request by a rewrite rule to an HTTPS-request
      RewriteRule   .*  https://gateway.acme.org/capo/? [R,L]
  </VirtualHost>
 
-This results in a B<HTTP/1.1 302 Found> reply:
+ CLIENT REQUEST:
 
-    GET / HTTP/1.1
-    Host: www.google.de
+    GET /foo/bar HTTP/1.1
+    Host: www.test.org
+
+ SERVER RESPONSE:
 
     HTTP/1.1 302 Found
     Location: https://gateway.acme.org/capo/
 
-=item 3. SESSION LOGIN
+=item 4. SESSION LOGIN
 
-The I<capo.fcgi> script offers a splash/login page. After successful login the firewall is dynamically changed to allow this clients IP/MAC tuple for internet access.
+The I<capo.fcgi> script, fired due to this redirected request, offers a splash/login page. After successful login the firewall is dynamically changed to allow this clients IP/MAC tuple for internet access by ipset(8):
 
-=item 4.  SESSION LOGOUT
+    ipset -A capo_sessions_ipset CLIENT_IP,CLIENT_MAC
+
+=item 5.  SESSION LOGOUT
 
 The capo.fcgi script offers a status/logout page. After successful logout the firewall is dynamically changed to disallow this IP/MAC tuple for internet access.
 
-=item 5. SESSION IDLE
+    ipset -D capo_sessions_ipset CLIENT_IP,CLIENT_MAC
 
-A cronjob fires periodically the capo-ctl.pl script checking for idle sessions. Idle means, the client didn't send any packet for a period of time (cfg param: IDLE_TIME = 10min). Before a session is put into idle state the client is once pinged.
+=item 6. SESSION IDLE
+
+A cronjob fires periodically the capo-ctl.pl script checking for idle sessions. Idle means, the client didn't send any packet for a period of time (cfg param: IDLE_TIME = 10min). Before a session is put into IDLE state the client is once pinged.
 
 It is a design goal not requiring JavaScript on clients!
 
-=item 6. SESSION REACTIVATION
+=item 7. COMFORTABLE SESSION REACTIVATION
 
-For a short period of time (cfg param: KEEP_OLD_STATE_PERIOD = 1h) the session is still on disc, but in idle state. If a client request matches the sessions IP/MAC/COOKIE data, the session is reactivated without a login page.
+For a short period of time (cfg param: KEEP_OLD_STATE_PERIOD = 1h) the session is still on disc, but in IDLE state. If a client has cookies enabled and a HTTP request matches the stored IP/MAC/COOKIE data on disc, the session is reactivated without a login page.
 
 =back
 
@@ -107,7 +117,9 @@ Logging is handled by the Log::Log4perl module. The logging configuration is sea
 
 The HTML files are generated from templates (Template-Toolkit syntax). You should use the original template files as stanzas and put the locally changed versions into the local template tree. The template search order prefers the local templates.
 
-The firewall rules and commands are also generated from template files. Normally there is no need to change the firewall rules but it would be possible without changing the perl code.
+The CSS is based on the wonderful blueprint css framework, see L<http://www.blueprintcss.org/>. Of course you may use your own styles if needed.
+
+The firewall rules and commands are also generated from template files. Normally there is no need to change the firewall rules but it would be possible to add some local needed additional rules without changing the perl code. Be careful, you must understand the algorithm and the difefrent states. Best you ask the author for any modifications.
 
 =head1 I18N
 
@@ -120,6 +132,12 @@ use Log::Log4perl qw(:easy);
 use Try::Tiny;
 use Template;
 
+#
+# locking is implemented as class not as role, since we
+# use the DESTROY() handler for lock_handles
+#
+use Captive::Portal::Locking qw(get_lock_handle);
+
 # consume CaPo roles
 use Role::Basic qw(with);
 with qw(
@@ -127,7 +145,6 @@ with qw(
   Captive::Portal::Role::Utils
   Captive::Portal::Role::I18N
   Captive::Portal::Role::AuthenSimple
-  Captive::Portal::Role::Locking
   Captive::Portal::Role::Session
   Captive::Portal::Role::Firewall
 );
@@ -928,6 +945,10 @@ EOF_500
 =head1 SEE ALSO
 
 L<Captive::Portal::Role::Config>, L<capo.fcgi> and L<capo-ctl.pl>
+
+=head1 CREDITS
+
+Most of the good parts have been implemented by many creative discussion with my colleague Bernd Leibing.
 
 =head1 BUGS AND LIMITATIONS
 

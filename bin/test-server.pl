@@ -3,7 +3,7 @@
 use strict;
 use warnings;
 
-our $VERSION = '2.15';
+our $VERSION = '2.16';
 
 =head1 NAME
 
@@ -15,7 +15,7 @@ Don't use it in production, SSL/TLS and FCGI not supported.
 
 =head1 SYNOPSIS
 
- test-server.pl [-p -port f capo.cfg] [-l log4perl.cfg]
+ test-server.pl [-p -port ] [- f capo.cfg] [-l log4perl.cfg]
 
 =head1 OPTIONS
 
@@ -99,7 +99,7 @@ INFO("You can connect the server on Port: $port");
 $server->run;
 
 sub usage {
-    die "$Script [-p port -f config_file -l log4perl.cfg]\n";
+    die "$Script [-p port] [-f capo.cfg] [-l log4perl.cfg]\n";
 }
 
 =head1 AUTHOR

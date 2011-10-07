@@ -2,7 +2,7 @@
 
 <div class="span-8">
 
- <h4>Zugang zum Funknetz erlaubt</h4>
+ <h4>Zugang zum Netzwerk erlaubt</h4>
 
  [% IF msg_type == 'info' %]
  <p class="info">[% msg_text %]</p>

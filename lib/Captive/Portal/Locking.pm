@@ -1,29 +1,33 @@
-package Captive::Portal::Role::Locking;
+package Captive::Portal::Locking;
 
 use strict;
 use warnings;
 
 =head1 NAME
 
-Captive::Portal::Role::Locking - lock handling for Captive::Portal
+Captive::Portal::Locking - lock handling for Captive::Portal
 
 =cut
 
-our $VERSION = '2.15';
+our $VERSION    = '2.16';
+
+# we inherit from FileHandle and add locking and DESTROY methods
+use parent qw(FileHandle);
 
 use Log::Log4perl qw(:easy);
 use Try::Tiny;
 use Time::HiRes qw(usleep ualarm);
 use Fcntl qw(:flock O_CREAT O_RDWR);
-use FileHandle qw();
 
-use Role::Basic;
+use Exporter qw(import);
+our @EXPORT_OK = qw(get_lock_handle);
+
 
 =head1 DESCRIPTION
 
-CaPo locking and transaction handling. 
+CaPo lock handling. 
 
-=head1 ROLES
+=head1 METHODS
 
 =over 4
 
@@ -42,7 +46,7 @@ Named parameters:
 =cut 
 
 sub get_lock_handle {
-    my $self = shift;
+    my $self = shift; 
     my %opts = @_;
 
     LOGDIE "missing param 'file'" unless exists $opts{file};
@@ -55,6 +59,12 @@ sub get_lock_handle {
 
     my $lock_handle = FileHandle->new( $file, O_RDWR | O_CREAT )
       or LOGDIE "Can't open $file: $!";
+
+    #
+    # rebless it for DESTROY handling: FileHandle -> Captive::Portal::Locking
+    # but still inheriting all other methods from FileHandle
+    #
+    bless $lock_handle, __PACKAGE__;
 
     my $fileno = $lock_handle->fileno or LOGDIE "Can't read fileno: $!";
 
@@ -161,6 +171,21 @@ sub get_lock_handle {
 
     }
 }
+
+
+=item $fh->DESTROY()
+
+Called whenever the locked file_handle is destroyed.  Just implemented to get proper debug messages for locking/unlocking.
+
+=cut
+
+sub DESTROY {
+    my $lock_handle = shift;
+    my $fileno      = $lock_handle->fileno;
+
+    DEBUG "fd=$fileno, UNLOCKED, filehandle DESTROY'ed => closed, unlocked";
+}
+
 
 1;
 

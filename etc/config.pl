@@ -142,13 +142,21 @@ return {
         ],
       },
 
-    I18N_LANGUAGES     => [ 'en', 'de', ],  # languages in the message catalog
-                                            # and language specific templates
+    # Languages in the message catalog and language specific templates.
+    # You need for every language a separate template tree under
+    # templates/local/view/[LANGUAGE]/...
+    #
+    I18N_LANGUAGES     => [ 'en', 'de', ],
+                                   
+    # fallback language if client languages aren't supported
+    #
+    I18N_FALLBACK_LANG => 'en',
+                                       
 
-    I18N_FALLBACK_LANG => 'en',             # language to use if client language
-                                            # isn't supported in message catalog 
-
-    I18N_MSG_CATALOG => {                   # translation of some system messages
+    # translation of needed system messages
+    # Every entry in I18N_LANGUAGES needs a translation
+    #
+    I18N_MSG_CATALOG => {
         msg_001 => {
             en => 'last session state was:',
             de => 'Status der letzten Sitzung war:',

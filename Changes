@@ -1,5 +1,10 @@
 Revision history for Captive::Portal
 
+2.16	Fri, 07 Oct 2011 09:52:45 +0200
+	* changed locking from being a role to a class for DESTROY() handling
+	* documentation improvements
+	* test improvements
+
 2.15	Thu, 06 Oct 2011 12:12:00 +0200
 	* capo.fcgi: put scriptname in process table
 
@@ -16,5 +21,5 @@ Revision history for Captive::Portal
 	* fixed minor documentation bugs
 
 2.10	Fri Sep 23 16:23:17 2011 +0200
-	* initial CPAN release
+	* initial CPAN release, already in production for months
 

@@ -9,7 +9,7 @@ Captive::Portal::Role::I18N - utils for internationalization
 
 =cut
 
-our $VERSION = '2.15';
+our $VERSION = '2.16';
 
 use Log::Log4perl qw(:easy);
 use Scalar::Util qw(looks_like_number);
@@ -99,12 +99,13 @@ sub choose_language {
     my $choosen_language;
     foreach my $lang (@accept_languages_sorted) {
         if ( grep m/\A\Q$lang\E\Z/, @{ $self->cfg->{I18N_LANGUAGES} } ) {
-            $choosen_language = $lang;
-            last;    # ready
+	    DEBUG "prefered language is: $lang";
+	    return $lang;
         }
     }
 
-    return $choosen_language || $self->cfg->{I18N_FALLBACK_LANG};
+    DEBUG 'take fallback language';
+    return $self->cfg->{I18N_FALLBACK_LANG};
 }
 
 =item $capo->gettext($msg_nr)

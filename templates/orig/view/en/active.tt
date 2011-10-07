@@ -2,7 +2,7 @@
 
 <div class="span-8">
 
- <h4>WLAN-Network access allowed</h4>
+ <h4>Network access allowed</h4>
 
  [% IF msg_type == 'info' %]
  <p class="info">[% msg_text %]</p>
@@ -25,7 +25,7 @@
 
  <h4>Problems and issues</h4>
  <div class="box">
-  <p>Please contact the help desk at</p>
+  <p>Please contact the helpdesk at</p>
   <ul>
    <li>Office hours: Mon - Fri 08:00 - 18:00 clock</li>
    <li>Phone: +49 (0) yyy/xx-zzzzz</li>
@@ -36,7 +36,7 @@
 
 <div class="prepend-1 span-15 last">
 
- <h4>Welcome to the WLAN-network</h4>
+ <h4>Welcome to the Network</h4>
  <p class="box">
   The network access is automatically disabled after a few minutes of inactivity.
   Anyway, please logout after work!

@@ -3,7 +3,7 @@
 use strict;
 use warnings;
 
-our $VERSION = '2.15';
+our $VERSION = '2.16';
 
 =head1 NAME
 
@@ -28,6 +28,7 @@ Example URL's:
   'http://localhost/status=true;admin_secret=my-secret;astext=true'
 
 =cut
+
 use sigtrap qw(die untrapped normal-signals);
 
 use FindBin qw($Bin $Script);
@@ -84,7 +85,7 @@ sub usage {
     warn "@_\n\n";
 
     die <<"EO_USAGE";
-$0 [-f config_file] [-l logfile] url
+$0 [-f capo.cfg] [-l log4perl.cfg] URL
 
 Example URL's:
 

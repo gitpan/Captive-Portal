@@ -45,16 +45,20 @@ ok( my $capo = Captive::Portal->new( cfg_file => 't/etc/ok.pl' ),
     'successfull parse t/etc/ok.pl' );
 
 my $mech = Test::WWW::Mechanize::CGI->new;
+$mech->add_header('Accept-Language' => 'de,en');
+
 $mech->cgi( sub { $capo->run( CGI->new ); } );
 $mech->get_ok(q{http://localhost});
 $mech->title_is('Captive Portal');
 
 $mech = Test::WWW::Mechanize::CGI->new;
+$mech->add_header('Accept-Language' => 'fr');
 $mech->cgi( sub { $capo->run( CGI->new ); } );
 $mech->get_ok(q{http://localhost/is_running});
 $mech->content_contains('RUNNING');
 
 $mech = Test::WWW::Mechanize::CGI->new;
+$mech->add_header('Accept-Language' => 'en');
 $mech->cgi( sub { $capo->run( CGI->new ); } );
 $mech->get_ok(q{http://localhost?username=fake;password=foo;login=1});
 $mech->content_contains('Network access allowed');

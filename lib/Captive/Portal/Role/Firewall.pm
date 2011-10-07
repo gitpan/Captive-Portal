@@ -13,7 +13,7 @@ Does all stuff needed to dynamically update iptables and ipset.
 
 =cut
 
-our $VERSION = '2.15';
+our $VERSION = '2.16';
 
 use Log::Log4perl qw(:easy);
 use Try::Tiny;
@@ -305,7 +305,7 @@ Reads and flushes the ipset 'capo_activity_ipset'  and returns a hashref for the
 
 Captive::Portal doesn't rely on JavaScript or any other client technology to test for idle clients. A cronjob must call periodically:
 
-   capo-ctl.pl -f config_file -l logg_file purge
+   capo-ctl.pl [-f capo.cfg] [-l log4perl.cfg] purge
 
 in order to detect idle clients. The firewall rules add active clients to the ipset 'capo_activity_ipset' and the purger reads and flushes this set with this method.
 
