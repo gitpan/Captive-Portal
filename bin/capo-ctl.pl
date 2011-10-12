@@ -3,7 +3,7 @@
 use strict;
 use warnings;
 
-our $VERSION = '2.16';
+our $VERSION = '2.17';
 
 =head1 NAME
 
@@ -29,6 +29,7 @@ use Log::Log4perl qw(:easy);
 use Getopt::Long qw(GetOptions);
 use Try::Tiny;
 use Captive::Portal;
+use Captive::Portal::LockHandle;
 
 $ENV{PATH} = '/sbin:/bin:/usr/sbin:/usr/bin';
 
@@ -177,7 +178,7 @@ sub start_fw {
     my $capo = shift;
 
     # try 30s to get the lock or die
-    my $lock_handle = $capo->get_lock_handle(
+    my $lock_handle = Captive::Portal::LockHandle->new(
         file     => $lock_file,
         shared   => 0,
         blocking => 1,
@@ -194,7 +195,7 @@ sub stop_fw {
     my $capo = shift;
 
     # try 30s to get the lock or die
-    my $lock_handle = $capo->get_lock_handle(
+    my $lock_handle = Captive::Portal::LockHandle->new(
         file     => $lock_file,
         shared   => 0,
         blocking => 1,
@@ -211,7 +212,7 @@ sub start_clear_fw {
     my $capo = shift;
 
     # try 30s to get the lock or die
-    my $lock_handle = $capo->get_lock_handle(
+    my $lock_handle = Captive::Portal::LockHandle->new(
         file     => $lock_file,
         shared   => 0,
         blocking => 1,
@@ -234,7 +235,7 @@ sub purge_sessions {
 
     if ( defined $capo->fw_status ) {
 
-        my $lock_handle = $capo->get_lock_handle(
+	my $lock_handle = Captive::Portal::LockHandle->new(
             file     => $lock_file,
             shared   => 0,
             blocking => 0,

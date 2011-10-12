@@ -13,7 +13,7 @@ Does all stuff needed to dynamically update iptables and ipset.
 
 =cut
 
-our $VERSION = '2.16';
+our $VERSION = '2.17';
 
 use Log::Log4perl qw(:easy);
 use Try::Tiny;

@@ -64,7 +64,7 @@ ALGORITHM IN SHORT
         logout the firewall is dynamically changed to disallow this IP/MAC
         tuple for internet access.
 
-            ipset -D capo_sessions_ipset CLIENT_IP,CLIENT_MAC
+            ipset -D capo_sessions_ipset CLIENT_IP
 
     6. SESSION IDLE
         A cronjob fires periodically the capo-ctl.pl script checking for

@@ -1,5 +1,8 @@
 Revision history for Captive::Portal
 
+2.17	Wed, 12 Oct 2011 15:14:56 +0200
+	* use Captive::Portal::LockHandle as Class, no longer MIXIN get_lock_handle()
+
 2.16	Fri, 07 Oct 2011 09:52:45 +0200
 	* changed locking from being a role to a class for DESTROY() handling
 	* documentation improvements

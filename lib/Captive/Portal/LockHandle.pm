@@ -1,41 +1,37 @@
-package Captive::Portal::Locking;
+package Captive::Portal::LockHandle;
 
 use strict;
 use warnings;
 
 =head1 NAME
 
-Captive::Portal::Locking - lock handling for Captive::Portal
+Captive::Portal::LockHandle - lock handling for Captive::Portal
 
 =cut
 
-our $VERSION    = '2.16';
+our $VERSION    = '2.17';
 
-# we inherit from FileHandle and add locking and DESTROY methods
-use parent qw(FileHandle);
 
 use Log::Log4perl qw(:easy);
 use Try::Tiny;
 use Time::HiRes qw(usleep ualarm);
 use Fcntl qw(:flock O_CREAT O_RDWR);
 
-use Exporter qw(import);
-our @EXPORT_OK = qw(get_lock_handle);
-
+use parent qw(FileHandle);
 
 =head1 DESCRIPTION
 
-CaPo lock handling. 
+Inherit from FileHandle, add locking and DESTROY().
 
-=head1 METHODS
+=head1 CONSTRUCTION and DESTROY
 
 =over 4
 
-=item $capo->get_lock_handle(%named_params)
+=item $handle = Captive::Portal::LockHandle->new(%options)
 
 Returns a filehandle with the requested lock assigned. There is no unlock, after destroying the filehandle the file is automatically closed and the lock released.
 
-Named parameters:
+Options:
 
  file     => filename to lock, created if not existing
  shared   => shared lock, defaults to exclusive lock
@@ -43,9 +39,11 @@ Named parameters:
  try      => number of retries in nonblocking mode, defaults to 1 retry
  timeout  => timeout in blocking mode, defaults to 1s
 
+=back
+
 =cut 
 
-sub get_lock_handle {
+sub new {
     my $self = shift; 
     my %opts = @_;
 
@@ -57,36 +55,27 @@ sub get_lock_handle {
 
     # make lexical scoped filehandle
 
-    my $lock_handle = FileHandle->new( $file, O_RDWR | O_CREAT )
+    my $lock_handle = $self->SUPER::new( $file, O_RDWR | O_CREAT )
       or LOGDIE "Can't open $file: $!";
-
-    #
-    # rebless it for DESTROY handling: FileHandle -> Captive::Portal::Locking
-    # but still inheriting all other methods from FileHandle
-    #
-    bless $lock_handle, __PACKAGE__;
 
     my $fileno = $lock_handle->fileno or LOGDIE "Can't read fileno: $!";
 
-    DEBUG "fd=$fileno, filehandle created";
-
     # defaults
-    $opts{shared}   = 0 unless exists $opts{shared};
-    $opts{blocking} = 1 unless exists $opts{blocking};
-    $opts{try}      = 1 unless exists $opts{try};
+    $opts{shared}   = 0         unless exists $opts{shared};
+    $opts{blocking} = 1         unless exists $opts{blocking};
+    $opts{try}      = 1         unless exists $opts{try};
+    $opts{timeout}  = 1_000_000 unless exists $opts{timeout};    # 1s
 
-    # 1_000_000us -> 1s
-    $opts{timeout} = 1_000_000 unless exists $opts{timeout};
+    DEBUG "fd=$fileno, ", $opts{shared} ? 'SHARED, ' : 'EXCLUSIVE, ',
+      $opts{blocking}
+      ? "BLOCKING, timeout $opts{timeout} us"
+      : "NONBLOCKING, retry $opts{try}";
 
     my $mode;
     if ( $opts{shared} ) {
-        DEBUG "fd=$fileno, lock mode is SHARED";
-
         $mode = LOCK_SH;
     }
     else {
-        DEBUG "fd=$fileno, lock mode is EXCLUSIVE";
-
         $mode = LOCK_EX;
     }
 
@@ -95,9 +84,6 @@ sub get_lock_handle {
     #   - nonblocking with retry
 
     if ( $opts{blocking} ) {
-
-        DEBUG "fd=$fileno, lock mode is BLOCKING";
-        DEBUG "fd=$fileno, timeout is $opts{timeout} us";
 
         my $old_alarm;
         my $error;
@@ -136,10 +122,8 @@ sub get_lock_handle {
 
         my $error;
 
-        DEBUG "fd=$fileno, lock mode is NONBLOCKING";
         $mode |= LOCK_NB;
 
-        DEBUG "fd=$fileno, lock retry $opts{try}";
 	my $retry = $opts{try};
 
         while ( $retry-- > 0 ) {
@@ -148,7 +132,7 @@ sub get_lock_handle {
 
             try {
                 flock $lock_handle, $mode
-                  or die "fd=$fileno, couldn't lock $file after $opts{try} retries: $!\n";
+                  or die "fd=$fileno, couldn't lock $file: $!\n";
 
 		DEBUG "fd=$fileno, LOCKED";
             }
@@ -173,9 +157,9 @@ sub get_lock_handle {
 }
 
 
-=item $fh->DESTROY()
+=item $handle->DESTROY()
 
-Called whenever the locked file_handle is destroyed.  Just implemented to get proper debug messages for locking/unlocking.
+Called whenever the locked filehandle is destroyed. Just implemented to get proper debug messages for locking/unlocking.
 
 =cut
 
@@ -183,7 +167,7 @@ sub DESTROY {
     my $lock_handle = shift;
     my $fileno      = $lock_handle->fileno;
 
-    DEBUG "fd=$fileno, UNLOCKED, filehandle DESTROY'ed => closed, unlocked";
+    DEBUG "fd=$fileno, UNLOCKED";
 }
 
 

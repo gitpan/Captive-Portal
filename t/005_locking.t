@@ -5,6 +5,7 @@ use Test::More;
 use Try::Tiny;
 
 use_ok('Captive::Portal');
+use_ok('Captive::Portal::LockHandle');
 
 my ( $capo, $ip, $mac, $error );
 
@@ -21,12 +22,12 @@ my %lock_options = (
 my ($fh1, $fh2);
 
 undef $error;
-try { $fh1 = $capo->get_lock_handle(%lock_options) }
+try { $fh1 = Captive::Portal::LockHandle->new(%lock_options) }
 catch { $error = $_ };
 ok( !$error, 'got first shared lock handle in blocking mode' );
 
 undef $error;
-try { $fh2 = $capo->get_lock_handle(%lock_options) }
+try { $fh2 = Captive::Portal::LockHandle->new(%lock_options) }
 catch { $error = $_ };
 ok( !$error, 'got next shared lock handle in blocking mode' );
 
@@ -38,7 +39,7 @@ ok( !$error, 'got next shared lock handle in blocking mode' );
 );
 
 undef $error;
-try { $fh1 = $capo->get_lock_handle(%lock_options) }
+try { $fh1 = Captive::Portal::LockHandle->new(%lock_options) }
 catch { $error = $_ };
 ok( !$error, 'got next shared lock handle in nonblocking mode' );
 
@@ -51,7 +52,7 @@ undef $fh2;
     blocking => 1,
 );
 
-try { $fh2 = $capo->get_lock_handle(%lock_options) }
+try { $fh2 = Captive::Portal::LockHandle->new(%lock_options) }
 catch { $error = $_ };
 like( $error, qr/timeout lock/i, 'shared lock still exists, timeout for EXCL lock' );
 
@@ -59,12 +60,12 @@ undef $error;
 undef $fh1;
 undef $fh2;
 
-try { $fh1 = $capo->get_lock_handle(%lock_options) }
+try { $fh1 = Captive::Portal::LockHandle->new(%lock_options) }
 catch { $error = $_ };
 ok( !$error, 'all locks released, got EXCL lock' );
 
 undef $error;
-try { $fh2 = $capo->get_lock_handle(%lock_options) }
+try { $fh2 = Captive::Portal::LockHandle->new(%lock_options) }
 catch { $error = $_ };
 like( $error, qr/timeout lock/i, 'other EXCL lock exists, timeout for EXCL lock' );
 
@@ -76,9 +77,9 @@ like( $error, qr/timeout lock/i, 'other EXCL lock exists, timeout for EXCL lock'
 );
 
 undef $error;
-try { $fh2 = $capo->get_lock_handle(%lock_options) }
+try { $fh2 = Captive::Portal::LockHandle->new(%lock_options) }
 catch { $error = $_ };
-like( $error, qr/20 retries/i, 'other EXCL lock exists, 20 retries, got no lock' );
+like( $error, qr/couldn\'t lock/i, 'other EXCL lock exists, 20 retries, got no lock' );
 
 %lock_options = (
     file     => $capo->cfg->{LOCK_FILE},
@@ -86,9 +87,9 @@ like( $error, qr/20 retries/i, 'other EXCL lock exists, 20 retries, got no lock'
 );
 
 undef $error;
-try { $fh1 = $capo->get_lock_handle(%lock_options) }
+try { $fh1 = Captive::Portal::LockHandle->new(%lock_options) }
 catch { $error = $_ };
 like( $error, qr/timeout lock/i, 'other EXCL lock exists, timeout for EXCL lock' );
 
-done_testing(10);
+done_testing(11);
 

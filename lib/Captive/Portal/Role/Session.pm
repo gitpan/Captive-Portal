@@ -9,12 +9,13 @@ Captive::Portal::Role::Session - session methods for Captive::Portal
 
 =cut
 
-our $VERSION = '2.16';
+our $VERSION = '2.17';
 
 use Log::Log4perl qw(:easy);
 use JSON qw();
 use Try::Tiny;
 use Digest::MD5 qw(md5_hex);
+use Captive::Portal::LockHandle;
 
 use Role::Basic;
 requires qw(
@@ -22,7 +23,6 @@ requires qw(
   run_cmd
   normalize_ip
   fw_find_mac
-  get_lock_handle
 );
 
 =head1 DESCRIPTION
@@ -222,8 +222,6 @@ sub list_sessions_from_disk {
 
 =item $capo->get_session_lock_handle(%named_params)
 
-Wrapper for get_lock_handle().
-
 Return a filehandle to the clients session file with the requested lock assigned. There is no unlock required, after destroying the filehandle the file is closed and the lock released.
 
 Named parameters:
@@ -244,7 +242,9 @@ sub get_session_lock_handle {
 
     $opts{file} = $self->cfg->{SESSIONS_DIR} . "/$opts{key}";
 
-    return $self->get_lock_handle(%opts);
+    # just a wrapper for:
+    #
+    return Captive::Portal::LockHandle->new(%opts);
 }
 
 =item $capo->read_session_handle($lock_handle)

@@ -3,7 +3,7 @@ package Captive::Portal;
 use strict;
 use warnings;
 
-our $VERSION = '2.16';
+our $VERSION = '2.17';
 
 =head1 NAME
 
@@ -66,7 +66,7 @@ The I<capo.fcgi> script, fired due to this redirected request, offers a splash/l
 
 The capo.fcgi script offers a status/logout page. After successful logout the firewall is dynamically changed to disallow this IP/MAC tuple for internet access.
 
-    ipset -D capo_sessions_ipset CLIENT_IP,CLIENT_MAC
+    ipset -D capo_sessions_ipset CLIENT_IP
 
 =item 6. SESSION IDLE
 
@@ -131,12 +131,6 @@ use POSIX qw(strftime);
 use Log::Log4perl qw(:easy);
 use Try::Tiny;
 use Template;
-
-#
-# locking is implemented as class not as role, since we
-# use the DESTROY() handler for lock_handles
-#
-use Captive::Portal::Locking qw(get_lock_handle);
 
 # consume CaPo roles
 use Role::Basic qw(with);
@@ -686,7 +680,7 @@ sub summary_status_view {
         unless ($session) {
 
             # maybe just redirected, but no other action
-            # get_lock_handle creates emtpy session files
+            # get_session_lock_handle creates emtpy session files
             $summary->{init}++;
 
             next;
@@ -748,7 +742,7 @@ sub detail_status_view {
         unless ($session) {
 
             # maybe just redirected, but no other action
-            # get_lock_handle creates emtpy session files
+            # get_session_lock_handle creates emtpy session files
             $summary->{init}++;
 
             next;
