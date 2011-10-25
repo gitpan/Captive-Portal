@@ -14,7 +14,7 @@ Config file parser and storage for cfg hash. The configuration syntax is perl.
 
 =cut
 
-our $VERSION = '2.18';
+our $VERSION = '2.19';
 
 use Log::Log4perl qw(:easy);
 use FindBin qw($Bin);

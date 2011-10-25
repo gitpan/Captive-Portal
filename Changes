@@ -1,5 +1,8 @@
 Revision history for Captive::Portal
 
+2.19	Tue, 25 Oct 2011 09:48:12 +0200
+	* removed unneeded modules for locking from Captive::Portal::Role::Utils
+
 2.18	Tue, 25 Oct 2011 09:36:23 +0200
 	* OS hint in Build.pl for CPAN testers
         * fixed POD error in Captive::Portal::LockHandle

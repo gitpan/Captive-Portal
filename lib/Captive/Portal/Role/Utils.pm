@@ -9,7 +9,7 @@ Captive::Portal::Role::Utils - common utils for Captive::Portal
 
 =cut
 
-our $VERSION = '2.18';
+our $VERSION = '2.19';
 
 use Log::Log4perl qw(:easy);
 use Capture::Tiny qw(capture);
@@ -18,8 +18,6 @@ use Time::HiRes qw(usleep ualarm);
 use Socket qw(inet_ntoa);
 use Net::hostent;
 use Template::Exception;
-use Fcntl qw(:flock O_CREAT O_RDWR);
-use FileHandle qw();
 
 use Role::Basic;
 requires qw(cfg);
