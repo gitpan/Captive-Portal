@@ -9,7 +9,7 @@ Captive::Portal::LockHandle - lock handling for Captive::Portal
 
 =cut
 
-our $VERSION    = '2.17';
+our $VERSION    = '2.18';
 
 
 use Log::Log4perl qw(:easy);
@@ -38,8 +38,6 @@ Options:
  blocking => blocking lock request, defaults to blocking
  try      => number of retries in nonblocking mode, defaults to 1 retry
  timeout  => timeout in blocking mode, defaults to 1s
-
-=back
 
 =cut 
 

@@ -9,7 +9,7 @@ Captive::Portal::Role::Session - session methods for Captive::Portal
 
 =cut
 
-our $VERSION = '2.17';
+our $VERSION = '2.18';
 
 use Log::Log4perl qw(:easy);
 use JSON qw();

@@ -2,6 +2,9 @@ use strict;
 use warnings;
 use Module::Build;
 
+# hint for CPAN testers
+die "OS unsupported\n" unless $^O =~ m/linux/i;
+
 my $default_install_base = '/usr/local/capo';
 
 ################

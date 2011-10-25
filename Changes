@@ -1,5 +1,9 @@
 Revision history for Captive::Portal
 
+2.18	Tue, 25 Oct 2011 09:36:23 +0200
+	* OS hint in Build.pl for CPAN testers
+        * fixed POD error in Captive::Portal::LockHandle
+
 2.17	Wed, 12 Oct 2011 15:14:56 +0200
 	* use Captive::Portal::LockHandle as Class, no longer MIXIN get_lock_handle()
 
