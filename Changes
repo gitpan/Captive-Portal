@@ -1,5 +1,14 @@
 Revision history for Captive::Portal
 
+2.22    Mon, 31 Oct 2011 11:09:42 +0100
+	* still more timing tweaks in deleting old, idle sessions
+
+2.21    Sat, 29 Oct 2011 19:57:44 +0200
+	* more small tweaks in deleting old, idle sessions
+
+2.20    Fri, 28 Oct 2011 15:34:43 +0200
+	* solved race condition in deleting old, idle sessions
+
 2.19	Tue, 25 Oct 2011 09:48:12 +0200
 	* removed unneeded modules for locking from Captive::Portal::Role::Utils
 

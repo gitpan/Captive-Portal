@@ -9,7 +9,7 @@ Captive::Portal::Role::Session - session methods for Captive::Portal
 
 =cut
 
-our $VERSION = '2.19';
+our $VERSION = '2.22';
 
 use Log::Log4perl qw(:easy);
 use JSON qw();
@@ -103,46 +103,70 @@ sub get_current_session {
         DEBUG "initialize new session for $ip/$mac_from_arptable";
 
         $session = {
-            STATE => 'init',
-            IP    => $ip,
-            MAC   => $mac_from_arptable,
+            STATE      => 'init',
+            IP         => $ip,
+            MAC        => $mac_from_arptable,
         };
+
+        return $session;
+    }
+
+    # session exists already, check for duplicate IP address
+    if ( $mac_from_arptable eq $session->{MAC} ) {
+
+        DEBUG "return current session for $ip";
+        return $session;
 
     }
 
-    # old session exists with same IP but different MAC
-    if ( $mac_from_arptable ne $session->{MAC} ) {
+    ###############################
+    # handle duplicate IP address
+    #
 
-	my $ip   = $session->{IP};
-	my $mac  = $session->{MAC};
-	my $user = $session->{USERNAME};
+    my $mac  = $session->{MAC};
+    my $user = $session->{USERNAME};
 
-        # is old session still marked as active?
-        if ( $session->{STATE} eq 'active' ) {
-            WARN "$user/$ip/$mac -> duplicate IP from $mac_from_arptable";
-            die "You are using an IP address $ip which is already in use!\n";
-        }
+    DEBUG "old session $user/$ip/$mac with different MAC on disk cache";
 
-	INFO "$user/$ip/$mac -> delete old idle session from disk cache";
-
-	my $error;
-	try { $self->delete_session_from_disk ($ip); }
-	catch { $error = $_ };
-	WARN $error if $error;
-
-        INFO "initialize new session for $ip/$mac_from_arptable";
-
-        $session = {
-            STATE => 'init',
-            IP    => $ip,
-            MAC   => $mac_from_arptable,
-        };
-
+    #
+    # is old session still marked as active?
+    # die and present error page to client
+    #
+    if ( $session->{STATE} eq 'active' ) {
+        WARN "$user/$ip/$mac -> duplicate IP from $mac_from_arptable";
+        die "Your IP address is duplicate: $ip\n";
     }
 
-    # update current session
-    $session->{USER_AGENT} = $query->user_agent || 'unknown';
-    $session->{IDLE_SINCE} = undef;
+    # delete old inactive session
+    # try to get lock just 2x
+    #
+    undef $error;
+    try {
+        my $lock_handle = $self->get_session_lock_handle(
+            key      => $ip,
+            shared   => 0,
+            blocking => 0,
+            try      => 10,
+        );
+
+        # OK, got the EXCL lock
+        INFO "$user/$ip/$mac -> delete old idle session from disk cache";
+
+        $self->delete_session_from_disk($ip);
+    }
+    catch { $error = $_ };
+
+    # ignore error, may be the old idle session was already deleted
+    # by a concurrent process
+    WARN $error if $error;
+
+    INFO "initialize new session for $ip/$mac_from_arptable";
+
+    $session = {
+        STATE      => 'init',
+        IP         => $ip,
+        MAC        => $mac_from_arptable,
+    };
 
     return $session;
 }
@@ -194,8 +218,25 @@ sub clear_sessions_from_disk {
     DEBUG 'clearing all sessions';
 
     foreach my $key ( $self->list_sessions_from_disk ) {
-        $self->delete_session_from_disk ($key);
+
+	my $error;
+        try {
+            my $lock_handle = $self->get_session_lock_handle(
+                key      => $key,
+                blocking => 0,
+                shared   => 0,         # EXCL
+                try      => 10,
+            );
+
+	    DEBUG "delete session: $key";
+	    $self->delete_session_from_disk($key);
+
+        }
+        catch { $error = $_ };
+	LOGDIE "$error\n" if $error;
     }
+
+    return 1;
 }
 
 =item $capo->list_sessions_from_disk()
@@ -327,7 +368,7 @@ sub delete_session_from_disk {
 
     my $fname = $self->cfg->{SESSIONS_DIR} . "/$key";
 
-    unlink $fname or LOGDIE "Couldn't unlink '$fname': $!";
+    unlink $fname or die "Couldn't unlink '$fname': $!";
 }
 
 =item $capo->mk_cookie()

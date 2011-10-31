@@ -13,7 +13,7 @@ Does all stuff needed to dynamically update iptables and ipset.
 
 =cut
 
-our $VERSION = '2.19';
+our $VERSION = '2.22';
 
 use Log::Log4perl qw(:easy);
 use Try::Tiny;
@@ -185,7 +185,8 @@ sub fw_reload_sessions {
         my $session = $self->read_session_handle($lock_handle);
 
         unless ($session) {
-            DEBUG "skip empty or malformed session for $ip";
+            DEBUG "delete empty or malformed session for $ip";
+            $self->delete_session_from_disk($ip);
             next;
         }
 

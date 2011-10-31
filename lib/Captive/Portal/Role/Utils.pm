@@ -9,7 +9,7 @@ Captive::Portal::Role::Utils - common utils for Captive::Portal
 
 =cut
 
-our $VERSION = '2.19';
+our $VERSION = '2.22';
 
 use Log::Log4perl qw(:easy);
 use Capture::Tiny qw(capture);

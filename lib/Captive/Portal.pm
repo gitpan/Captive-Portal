@@ -3,7 +3,7 @@ package Captive::Portal;
 use strict;
 use warnings;
 
-our $VERSION = '2.19';
+our $VERSION = '2.22';
 
 =head1 NAME
 
@@ -199,8 +199,9 @@ sub new {
 sub run {
     my $self      = shift; # CaPo object
 
-    my $query     = shift or LOGDIE "run(): missing param 'query'\n";
-    my $path_info = $query->path_info || '';
+    my $query = shift or LOGDIE "run(): missing param 'query'\n";
+    my $path_info   = $query->path_info   || '';
+    my $client_addr = $query->remote_addr || '?.?.?.?';
 
     DEBUG('------------- run(): REQUEST BEGIN --------------');
 
@@ -209,8 +210,8 @@ sub run {
     $safe_url =~ s/password=     .+? (;|\Z) /password=******;/x;
     $safe_url =~ s/admin_secret= .+? (;|\Z) /admin_secret=******;/x;
 
-    DEBUG 'got request: ' . $safe_url . ' ...';
-    DEBUG 'got path_info: ' . $path_info;
+    DEBUG "got request from $client_addr: $safe_url  ...";
+    DEBUG "got path_info: $path_info";
 
     my $error;
     try {
@@ -415,7 +416,7 @@ sub splash_view {
 sub idle_view {
     my $self = shift;
 
-    DEBUG('running IDLE handler ...');
+    DEBUG('running IDLE reactivation handler ...');
 
     # this requests parameters are in the context slot
     my $query   = $self->{CTX}{QUERY};
@@ -499,7 +500,7 @@ sub login {
 
     my $ip         = $session->{IP};
     my $mac        = $session->{MAC};
-    my $user_agent = $session->{USER_AGENT};
+    my $user_agent = $query->user_agent || 'unknown';
 
     DEBUG("login requested for '$ip/$mac'");
 
@@ -543,10 +544,11 @@ sub login {
         return $self->splash_view;
     }
 
-    $session->{USERNAME}   = $username;
     $session->{STATE}      = 'active';
     $session->{START_TIME} = time();
     $session->{STOP_TIME}  = '';
+    $session->{USERNAME}   = $username;
+    $session->{USER_AGENT} = $user_agent;
     $session->{COOKIE}     = $self->mk_cookie->value;
 
     # EXCL lock, change ipset and session in one transaction
