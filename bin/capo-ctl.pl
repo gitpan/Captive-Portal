@@ -3,7 +3,7 @@
 use strict;
 use warnings;
 
-our $VERSION = '2.22';
+our $VERSION = '2.24';
 
 =head1 NAME
 
@@ -123,7 +123,7 @@ purge idle sessions, periodically used by cron
 
 start the firewall, flush old sessions
 
-=item B<clear_sessions>
+=item B<clear>
 
 clear current sessions from iptables/ipsets and sessions dir
 

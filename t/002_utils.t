@@ -30,10 +30,7 @@ ok( !$error, "ignore exit_codes" );
 
 undef $error;
 try { Captive::Portal::Role::Utils->run_cmd(qw(pipapo)) } catch { $error = $_ };
-like(
-    $error,
-    qr/Can't exec .pipapo./i,
-    "throws error message like 'no such file ... '"
+ok( $error, "throws error for unknown command"
 );
 #diag explain $error;
 

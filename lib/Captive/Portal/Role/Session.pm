@@ -9,7 +9,7 @@ Captive::Portal::Role::Session - session methods for Captive::Portal
 
 =cut
 
-our $VERSION = '2.22';
+our $VERSION = '2.24';
 
 use Log::Log4perl qw(:easy);
 use JSON qw();
@@ -24,6 +24,21 @@ requires qw(
   normalize_ip
   fw_find_mac
 );
+
+# Role::Basic exports ALL subroutines, there is currently no other way to
+# prevent exporting private methods, sigh
+#
+my $_init_session = sub {
+    my ( $self, $ip, $mac ) = @_;
+
+    my $new_session = {
+        STATE => 'init',
+        IP    => $ip,
+        MAC   => $mac,
+    };
+
+    return $new_session;
+};
 
 =head1 DESCRIPTION
 
@@ -55,7 +70,7 @@ All roles throw exceptions on error.
 
 =item $capo->get_current_session()
 
-Returns the current- or a new session-hash for this HTTP-Client.
+Returns the current- or a new initialized session-hash for this HTTP-Client.
 
 =cut
 
@@ -101,17 +116,12 @@ sub get_current_session {
     unless ($session) {
 
         DEBUG "initialize new session for $ip/$mac_from_arptable";
-
-        $session = {
-            STATE      => 'init',
-            IP         => $ip,
-            MAC        => $mac_from_arptable,
-        };
+        $session = $self->$_init_session( $ip, $mac_from_arptable );
 
         return $session;
     }
 
-    # session exists already, check for duplicate IP address
+    # session for IP exists already, check for same MAC address
     if ( $mac_from_arptable eq $session->{MAC} ) {
 
         DEBUG "return current session for $ip";
@@ -130,43 +140,19 @@ sub get_current_session {
 
     #
     # is old session still marked as active?
-    # die and present error page to client
+    # die with error page
     #
     if ( $session->{STATE} eq 'active' ) {
         WARN "$user/$ip/$mac -> duplicate IP from $mac_from_arptable";
         die "Your IP address is duplicate: $ip\n";
     }
 
-    # delete old inactive session
-    # try to get lock just 2x
+    ########
+    # old session is already idle, init new session,
+    # disk cache is rewritten after login
     #
-    undef $error;
-    try {
-        my $lock_handle = $self->get_session_lock_handle(
-            key      => $ip,
-            shared   => 0,
-            blocking => 0,
-            try      => 10,
-        );
-
-        # OK, got the EXCL lock
-        INFO "$user/$ip/$mac -> delete old idle session from disk cache";
-
-        $self->delete_session_from_disk($ip);
-    }
-    catch { $error = $_ };
-
-    # ignore error, may be the old idle session was already deleted
-    # by a concurrent process
-    WARN $error if $error;
-
-    INFO "initialize new session for $ip/$mac_from_arptable";
-
-    $session = {
-        STATE      => 'init',
-        IP         => $ip,
-        MAC        => $mac_from_arptable,
-    };
+    DEBUG "initialize new session for $ip/$mac_from_arptable";
+    $session = $self->$_init_session( $ip, $mac_from_arptable );
 
     return $session;
 }

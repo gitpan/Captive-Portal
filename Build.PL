@@ -69,6 +69,7 @@ my $builder = $my_capo_class->new(
     install_base      => $default_install_base,
 
     requires => {
+        'parent'      => 0,
         'Role::Basic' => 0,
         'Template'    => 0,
         'JSON'        => 0,

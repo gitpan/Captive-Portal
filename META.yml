@@ -14,31 +14,31 @@ name: Captive-Portal
 provides:
   Captive::Portal:
     file: lib/Captive/Portal.pm
-    version: 2.22
+    version: 2.24
   Captive::Portal::LockHandle:
     file: lib/Captive/Portal/LockHandle.pm
-    version: 2.22
+    version: 2.24
   Captive::Portal::Role::AuthenSimple:
     file: lib/Captive/Portal/Role/AuthenSimple.pm
-    version: 2.22
+    version: 2.24
   Captive::Portal::Role::Config:
     file: lib/Captive/Portal/Role/Config.pm
-    version: 2.22
+    version: 2.24
   Captive::Portal::Role::Firewall:
     file: lib/Captive/Portal/Role/Firewall.pm
-    version: 2.22
+    version: 2.24
   Captive::Portal::Role::I18N:
     file: lib/Captive/Portal/Role/I18N.pm
-    version: 2.22
+    version: 2.24
   Captive::Portal::Role::Session:
     file: lib/Captive/Portal/Role/Session.pm
-    version: 2.22
+    version: 2.24
   Captive::Portal::Role::Utils:
     file: lib/Captive/Portal/Role/Utils.pm
-    version: 2.22
+    version: 2.24
   Captive::Portal::TestServer:
     file: lib/Captive/Portal/TestServer.pm
-    version: 2.22
+    version: 2.24
 recommends:
   Authen::Simple::RADIUS: 0
   HTTP::Server::Simple::CGI: 0
@@ -57,6 +57,7 @@ requires:
   Template: 0
   Time::HiRes: 0
   Try::Tiny: 0
+  parent: 0
 resources:
   license: http://dev.perl.org/licenses/
-version: 2.22
+version: 2.24
