@@ -3,7 +3,7 @@ package Captive::Portal;
 use strict;
 use warnings;
 
-our $VERSION = '2.24';
+our $VERSION = '2.25';
 
 =head1 NAME
 
@@ -119,7 +119,7 @@ The HTML files are generated from templates (Template-Toolkit syntax). You shoul
 
 The CSS is based on the wonderful blueprint css framework, see L<http://www.blueprintcss.org/>. Of course you may use your own styles if needed.
 
-The firewall rules and commands are also generated from template files. Normally there is no need to change the firewall rules but it would be possible to add some local needed additional rules without changing the perl code. Be careful, you must understand the algorithm and the difefrent states. Best you ask the author for any modifications.
+The firewall rules and commands are also generated from template files. Normally there is no need to change the firewall rules but it would be possible to add some local needed additional rules without changing the perl code. Be careful, you must understand the algorithm and the different states. Best you ask the author for any modifications.
 
 =head1 I18N
 

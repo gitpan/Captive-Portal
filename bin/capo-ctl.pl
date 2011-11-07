@@ -3,7 +3,7 @@
 use strict;
 use warnings;
 
-our $VERSION = '2.24';
+our $VERSION = '2.25';
 
 =head1 NAME
 
@@ -22,7 +22,7 @@ Controller script to start, stop, clear, list and purge iptables/ipsets and sess
 use sigtrap qw(die untrapped normal-signals);
 
 use Pod::Usage qw(pod2usage);
-use FindBin qw($Bin);
+use FindBin qw($Bin $Script);
 use lib "$Bin/../lib";
 
 use Log::Log4perl qw(:easy);
@@ -35,6 +35,11 @@ $ENV{PATH} = '/sbin:/bin:/usr/sbin:/usr/bin';
 
 select(STDERR) and $| = 1;
 select(STDOUT) and $| = 1;
+
+#####################################################################
+# put scriptname in process table instead of plain 'perl'
+#####################################################################
+$0 = $Script;
 
 #####################################################################
 # handle cmdline options and args

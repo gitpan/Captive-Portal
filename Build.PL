@@ -68,6 +68,15 @@ my $builder = $my_capo_class->new(
     dynamic_config    => 1,
     install_base      => $default_install_base,
 
+    script_files => [
+        qw(
+          bin/capo-ctl.pl
+          cgi-bin/capo.fcgi
+          bin/mock-server.pl
+          bin/test-server.pl
+          )
+      ],
+
     requires => {
         'parent'      => 0,
         'Role::Basic' => 0,
@@ -97,18 +106,17 @@ my $builder = $my_capo_class->new(
 
     configure_requires => { 'Module::Build' => 0, },
 
-    add_to_cleanup => ['Captive-Portal-*', 't/sessions'],
+    add_to_cleanup => [ 'Captive-Portal-*', 't/sessions' ],
 );
 
-
 # what web-app dirs must be installed
-$builder->notes(dirs => [qw(lib bin cgi-bin etc static templates)]);
+$builder->notes( dirs => [qw(lib bin cgi-bin etc static templates)] );
 $builder->create_build_script();
 
 # -----------------------------------------------------------------------
 
 $builder->notes( test_radius_modules => 1 )
-  if $builder->y_n( 'Shall we test the availabilty of RADIUS modules?', 'no');
+  if $builder->y_n( 'Shall we test the availabilty of RADIUS modules?', 'no' );
 
 $builder->log_info( <<EOWARN );
 

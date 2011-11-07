@@ -130,7 +130,7 @@ LOCAL ADAPTATION
     Normally there is no need to change the firewall rules but it would be
     possible to add some local needed additional rules without changing the
     perl code. Be careful, you must understand the algorithm and the
-    difefrent states. Best you ask the author for any modifications.
+    different states. Best you ask the author for any modifications.
 
 I18N
     There exists a template tree for each supported language. Some
