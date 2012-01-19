@@ -1,6 +1,17 @@
+=================================================
+ATTENTION ATTENTION ATTENTION ATTENTION ATTENTION 
+=================================================
+
+ipset(8) changed the API and cmdline options radically
+after versions >= 5.x.
+
+You must use Captive::Portal Version 2.x for ipset versions <= 4
+and Captive::Portal Version >= 3.x and later for ipset versions >= 5
+
 ==============================================
  INSTALLATION instructions for Captive-Portal
 ==============================================
+
 
 To install this Web-App, run the following commands:
 

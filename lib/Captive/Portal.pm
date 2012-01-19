@@ -3,7 +3,7 @@ package Captive::Portal;
 use strict;
 use warnings;
 
-our $VERSION = '2.26';
+our $VERSION = '2.27';
 
 =head1 NAME
 
@@ -962,7 +962,7 @@ Karl Gaissmaier, C<< <gaissmai at cpan.org> >>
 
 =head1 LICENSE AND COPYRIGHT
 
-Copyright 2010-2011 Karl Gaissmaier, all rights reserved.
+Copyright 2010-2012 Karl Gaissmaier, all rights reserved.
 
 This distribution is free software; you can redistribute it and/or modify it
 under the terms of either:

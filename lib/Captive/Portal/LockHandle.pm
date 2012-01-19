@@ -9,7 +9,7 @@ Captive::Portal::LockHandle - lock handling for Captive::Portal
 
 =cut
 
-our $VERSION = '2.26';
+our $VERSION = '2.27';
 
 use Log::Log4perl qw(:easy);
 use Try::Tiny;
@@ -176,7 +176,7 @@ Karl Gaissmaier, C<< <gaissmai at cpan.org> >>
 
 =head1 LICENSE AND COPYRIGHT
 
-Copyright 2010-2011 Karl Gaissmaier, all rights reserved.
+Copyright 2010-2012 Karl Gaissmaier, all rights reserved.
 
 This distribution is free software; you can redistribute it and/or modify it
 under the terms of either:
