@@ -14,7 +14,7 @@ Config file parser and storage for cfg hash. The configuration syntax is perl.
 
 =cut
 
-our $VERSION = '2.25';
+our $VERSION = '2.26';
 
 use Log::Log4perl qw(:easy);
 use FindBin qw($Bin);
@@ -165,7 +165,7 @@ Allow access to open local services like DHCP, DNS, NTP, ...
 
 =item IPTABLES->open_clients
 
-Allow access for some dumb clients without autentication.
+Allow access for some dumb clients without authentication.
 
 =item IPTABLES->open_servers
 

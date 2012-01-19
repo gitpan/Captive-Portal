@@ -1,5 +1,9 @@
 Revision history for Captive::Portal
 
+2.26    Thu, 19 Jan 2012 11:06:13 +0100
+	* arrgh, ipset API changed, check for ipset major version > 4 in Build.PL
+	* fixed minor POD typos
+
 2.25    Mon, 07 Nov 2011 10:13:15 +0100
 	* fixed again POD typos
 	* added script_files in Build.pl

@@ -9,7 +9,7 @@ Captive::Portal::Role::Session - session methods for Captive::Portal
 
 =cut
 
-our $VERSION = '2.25';
+our $VERSION = '2.26';
 
 use Log::Log4perl qw(:easy);
 use JSON qw();
@@ -22,7 +22,7 @@ requires qw(
   cfg
   run_cmd
   normalize_ip
-  fw_find_mac
+  find_mac
 );
 
 # Role::Basic exports ALL subroutines, there is currently no other way to
@@ -86,7 +86,7 @@ sub get_current_session {
     $ip = $self->normalize_ip($ip);
 
     DEBUG "try to find MAC addr for ip '$ip'";
-    $mac_from_arptable = $self->fw_find_mac($ip);
+    $mac_from_arptable = $self->find_mac($ip);
 
     unless ($mac_from_arptable) {
         WARN "request from '$ip', no MAC address found";
@@ -205,21 +205,21 @@ sub clear_sessions_from_disk {
 
     foreach my $key ( $self->list_sessions_from_disk ) {
 
-	my $error;
+        my $error;
         try {
             my $lock_handle = $self->get_session_lock_handle(
                 key      => $key,
                 blocking => 0,
-                shared   => 0,         # EXCL
+                shared   => 0,      # EXCL
                 try      => 10,
             );
 
-	    DEBUG "delete session: $key";
-	    $self->delete_session_from_disk($key);
+            DEBUG "delete session: $key";
+            $self->delete_session_from_disk($key);
 
         }
         catch { $error = $_ };
-	LOGDIE "$error\n" if $error;
+        LOGDIE "$error\n" if $error;
     }
 
     return 1;

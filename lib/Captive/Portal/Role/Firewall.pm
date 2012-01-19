@@ -13,7 +13,7 @@ Does all stuff needed to dynamically update iptables and ipset.
 
 =cut
 
-our $VERSION = '2.25';
+our $VERSION = '2.26';
 
 use Log::Log4perl qw(:easy);
 use Try::Tiny;
@@ -21,7 +21,6 @@ use Try::Tiny;
 use Role::Basic;
 requires qw(
   cfg
-  get_arp_table
   run_cmd
   list_sessions_from_disk
   get_session_lock_handle
@@ -37,32 +36,6 @@ my ($_fw_install_rules);
 =head1 ROLES
 
 =over
-
-=item $capo->fw_find_mac($ip)
-
-Returns the corresponding MAC address for given IP address from ARP-table on success or undef on failure.
-
-=cut
-
-sub fw_find_mac {
-    my $self      = shift;
-    my $lookup_ip = shift
-      or LOGDIE("missing parameter 'ip'");
-
-    my $mac = $self->get_arp_table->{$lookup_ip};
-
-    return $mac if $mac;
-
-    # nothing found
-    DEBUG "can't find ip in ARPTABLE: '$lookup_ip'";
-
-    if ( $self->cfg->{MOCK_MAC} ) {
-        DEBUG 'using mocked MAC address';
-        return '00:00:00:00:00:00';
-    }
-
-    return;
-}
 
 =item $capo->fw_trigger_clients(@ip_addresses)
 
@@ -193,7 +166,8 @@ sub fw_reload_sessions {
         next unless $session->{STATE} eq 'active';
 
         my $error;
-        try { $self->fw_start_session($ip, $session->{MAC}) } catch { $error = $_ };
+        try { $self->fw_start_session( $ip, $session->{MAC} ) }
+        catch { $error = $_ };
 
         if ($error) {
             ERROR($error);
@@ -328,8 +302,7 @@ sub fw_list_activity {
             qw(sudo ipset --swap capo_activity_ipset capo_activity_swap_ipset)
         );
 
-        ($stdout) =
-          $self->run_cmd(qw(sudo ipset -nL capo_activity_swap_ipset));
+        ($stdout) = $self->run_cmd(qw(sudo ipset -nL capo_activity_swap_ipset));
     }
     catch {
         $error = $_;
@@ -480,10 +453,11 @@ sub fw_purge_sessions {
     # Walk over all disk sessions, be aware, only current session is locked!
 
     # There will be race conditions with running fcgi processes
-    # for sessions not currently handled (locked), but see below for handling
-    # these races.
+    # for sessions not currently handled (locked), but see below
+    # for handling these races.
     #
-    # This is by intention not locking for a long time and delaying http responses!
+    # This is by intention not locking for a long time and delaying
+    # http responses!
 
     foreach my $ip ( $self->list_sessions_from_disk ) {
 
@@ -492,7 +466,7 @@ sub fw_purge_sessions {
 
             # get the EXCL lock for the session file
             # hold this lock until next loop iteration
-	    # via lexical scope of $lock_handle
+            # via lexical scope of $lock_handle
             #
             $lock_handle = $self->get_session_lock_handle(
                 key      => $ip,
@@ -515,7 +489,7 @@ sub fw_purge_sessions {
             DEBUG "delete empty or malformed session: $ip";
             $self->delete_session_from_disk($ip);
 
-            next;                      # session
+            next;           # session
         }
 
         # The session ip must also be in the ipset capo_sessions_ipset.
@@ -627,8 +601,7 @@ sub fw_purge_sessions {
             WARN "$user/$ip/$mac -> delete session, ipset-entry missing";
 
             my $error;
-            try { $self->delete_session_from_disk($ip); }
-            catch { $error = $_ };
+            try { $self->delete_session_from_disk($ip); } catch { $error = $_ };
 
             ERROR $error if $error;
 
@@ -685,10 +658,9 @@ sub fw_purge_sessions {
         # max IDLE time reached?
         ###########################################################
 
-	my $idle_since = $session->{IDLE_SINCE} || $this_run;
+        my $idle_since = $session->{IDLE_SINCE} || $this_run;
 
-        if ( $this_run - $idle_since >= $self->cfg->{IDLE_TIME} )
-        {
+        if ( $this_run - $idle_since >= $self->cfg->{IDLE_TIME} ) {
 
             INFO "$user/$ip/$mac -> session is IDLE";
 
@@ -716,7 +688,7 @@ sub fw_purge_sessions {
 
             INFO "$user/$ip/$mac -> idle candidate";
 
-	    push @trigger_targets, $ip;
+            push @trigger_targets, $ip;
 
             # mark as idle candidate
             $session->{IDLE_SINCE} = $this_run;
@@ -800,7 +772,7 @@ sub fw_purge_sessions {
 # Reads the template, sanitize it and call the commands in the template file via run_cmd
 #
 
-$_fw_install_rules  = sub {
+$_fw_install_rules = sub {
     my $self = shift;
     my $step = shift
       or LOGDIE "missing param 'step'";
@@ -808,8 +780,7 @@ $_fw_install_rules  = sub {
     my $cmds;
     my $template = "firewall/${step}.tt";
     my $tmpl_vars =
-      { %{ $self->cfg->{IPTABLES} }, ipv4_aton => $self->can('ipv4_aton'),
-      };
+      { %{ $self->cfg->{IPTABLES} }, ipv4_aton => $self->can('ipv4_aton'), };
 
     DEBUG "get the firewall $step commands via template $template";
 

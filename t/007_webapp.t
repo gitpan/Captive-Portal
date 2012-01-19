@@ -76,7 +76,7 @@ $mech->content_contains('Sessions');
 $mech = Test::WWW::Mechanize::CGI->new;
 $mech->cgi( sub { $capo->run( CGI->new ); } );
 $mech->get_ok(q{http://localhost/status?admin_secret=my-secret;astext=1});
-$mech->content_contains('USERNAME: "fake", IP: "127.0.0.1", MAC: "00:00:00:00:00:00"');
+$mech->content_contains('USERNAME: "fake", IP: "127.0.0.1", MAC: "DE:AD:BE:EF:DE:AD"');
 
 $mech = Test::WWW::Mechanize::CGI->new;
 $mech->cgi( sub { $capo->run( CGI->new ); } );

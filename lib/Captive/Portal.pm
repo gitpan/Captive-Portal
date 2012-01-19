@@ -3,7 +3,7 @@ package Captive::Portal;
 use strict;
 use warnings;
 
-our $VERSION = '2.25';
+our $VERSION = '2.26';
 
 =head1 NAME
 
@@ -147,9 +147,9 @@ with qw(
 # create CaPo object once
 #
 # read the config
-# drop privilieges
+# drop privileges
 # create Template object
-# create authentciation object
+# create authentication object
 # open/create session dir
 #
 sub new {

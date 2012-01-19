@@ -9,7 +9,7 @@ Captive::Portal::Role::Utils - common utils for Captive::Portal
 
 =cut
 
-our $VERSION = '2.25';
+our $VERSION = '2.26';
 
 use Log::Log4perl qw(:easy);
 use Capture::Tiny qw(capture);
@@ -30,16 +30,21 @@ Utility roles needed by other modules. All roles die on error.
 
 =over 4
 
-=item $capo->get_arp_table()
+=item $capo->find_mac($ip)
 
-Open, read and parse I</proc/net/arp>.
-
-Return hashref with ipv4 addresses as keys and MAC-addresses as values.
+Returns the corresponding MAC address for given IP address from /proc/net/arp on success or undef on failure.
 
 =cut
 
-sub get_arp_table {
-    my $self = shift;
+sub find_mac {
+    my $self      = shift;
+    my $lookup_ip = shift
+      or LOGDIE("missing parameter 'ip'");
+
+    if ( $self->cfg->{MOCK_MAC} ) {
+        DEBUG 'using mocked MAC address';
+        return 'DE:AD:BE:EF:DE:AD';
+    }
 
     DEBUG 'open /proc/net/arp';
 
@@ -78,7 +83,14 @@ sub get_arp_table {
         $arp_tbl->{$ip} = uc $mac;
     }
 
-    return $arp_tbl;
+    my $mac = $arp_tbl->{$lookup_ip};
+
+    return $mac if $mac;
+
+    # nothing found
+    DEBUG "can't find ip in ARPTABLE: '$lookup_ip'";
+
+    return;
 }
 
 =item $capo->ip2hex($ip)
@@ -240,7 +252,7 @@ sub run_cmd {
 
         local $SIG{ALRM} = sub { die "timeout running cmd: '@cmd'," };
 
-	###############################
+        ###############################
         # get rid of some Capture::Tiny limitations with FCGI
         # the problem is the buggy FCGI tie implementation for filehandles
 
@@ -251,14 +263,15 @@ sub run_cmd {
         open( STDIN,  '<&=0' );
         open( STDOUT, '>>&=1' );
         open( STDERR, '>>&=2' );
-	#
-	###############################
+
+        #
+        ###############################
 
         # start/stop watchdog around system()
         $old_alarm = ualarm $timeout || 0;
         ( $stdout, $stderr ) = capture { system(@cmd) };
 
-	#################################
+        #################################
         # normalize exit code, see perldoc -f system
         my $exit_code = $?;
 
@@ -271,8 +284,9 @@ sub run_cmd {
         else {
             $exit_code = $exit_code >> 8;
         }
-	#
-	#################################
+
+        #
+        #################################
 
         # something went wrong with system, shall we ignore it
         if ( $exit_code != 0 ) {
@@ -311,8 +325,7 @@ Example:
 
 sub ipv4_aton {
     my @hosts = @_
-      or die Template::Exception->new( 'ipv4_aton',
-        "missing param 'hosts'\n" );
+      or die Template::Exception->new( 'ipv4_aton', "missing param 'hosts'\n" );
 
     # explode array refs
     my @host_list;

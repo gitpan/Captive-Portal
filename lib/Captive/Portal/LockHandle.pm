@@ -9,8 +9,7 @@ Captive::Portal::LockHandle - lock handling for Captive::Portal
 
 =cut
 
-our $VERSION    = '2.25';
-
+our $VERSION = '2.26';
 
 use Log::Log4perl qw(:easy);
 use Try::Tiny;
@@ -42,7 +41,7 @@ Options:
 =cut 
 
 sub new {
-    my $self = shift; 
+    my $self = shift;
     my %opts = @_;
 
     LOGDIE "missing param 'file'" unless exists $opts{file};
@@ -122,7 +121,7 @@ sub new {
 
         $mode |= LOCK_NB;
 
-	my $retry = $opts{try};
+        my $retry = $opts{try};
 
         while ( $retry-- > 0 ) {
 
@@ -132,7 +131,7 @@ sub new {
                 flock $lock_handle, $mode
                   or die "fd=$fileno, couldn't lock $file: $!\n";
 
-		DEBUG "fd=$fileno, LOCKED";
+                DEBUG "fd=$fileno, LOCKED";
             }
             catch { $error = $_; };
 
@@ -154,7 +153,6 @@ sub new {
     }
 }
 
-
 =item $handle->DESTROY()
 
 Called whenever the locked filehandle is destroyed. Just implemented to get proper debug messages for locking/unlocking.
@@ -167,7 +165,6 @@ sub DESTROY {
 
     DEBUG "fd=$fileno, UNLOCKED";
 }
-
 
 1;
 

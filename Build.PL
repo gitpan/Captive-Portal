@@ -5,6 +5,14 @@ use Module::Build;
 # hint for CPAN testers
 die "OS unsupported\n" unless $^O =~ m/linux/i;
 
+# hint for CPAN testers
+my ($ipset_major_version) = `ipset -H 2>&1` =~ m/^ipset\s+v?([\d]).*$/ims;
+
+die 'OS unsupported --'
+  . "this ipset version v$ipset_major_version > v4, "
+  . "use Captive::Portal version >= 3.x\n"
+  if $ipset_major_version > 4;
+
 my $default_install_base = '/usr/local/capo';
 
 ################
@@ -75,7 +83,7 @@ my $builder = $my_capo_class->new(
           bin/mock-server.pl
           bin/test-server.pl
           )
-      ],
+    ],
 
     requires => {
         'parent'      => 0,
@@ -116,7 +124,8 @@ $builder->create_build_script();
 # -----------------------------------------------------------------------
 
 $builder->notes( test_radius_modules => 1 )
-  if $builder->y_n( 'Shall we test the availabilty of RADIUS modules?', 'no' );
+  if $builder->y_n( 'Shall we test the availabilty of RADIUS modules?',
+    'no' );
 
 $builder->log_info( <<EOWARN );
 
