@@ -3,7 +3,7 @@
 use strict;
 use warnings;
 
-our $VERSION = '2.27';
+our $VERSION = '2.28';
 
 =head1 NAME
 
@@ -38,7 +38,9 @@ select(STDOUT) and $| = 1;
 
 #####################################################################
 # put scriptname in process table instead of plain 'perl'
+# but safe the pathname for pod2usage, sigh
 #####################################################################
+my $pathname = $0;
 $0 = $Script;
 
 #####################################################################
@@ -60,9 +62,13 @@ GetOptions(
     'file=s'     => \$cfg_file,
   )
   or pod2usage(
-    { -exitval => 1, -verbose => 1, -output => \*STDERR }
+    {
+        -input   => $pathname,
+        -exitval => 1,
+        -verbose => 1,
+        -output  => \*STDERR
+    }
   );
-
 
 if ( $log4perl && -f $log4perl ) {
     Log::Log4perl->init($log4perl);
@@ -147,11 +153,17 @@ list  sessions from iptables/ipsets and sessions dir
 my $action = shift;
 
 pod2usage(
-    { -message => "ACTION missing\n", -exitval => 1, -output => \*STDERR } )
-  unless $action;
+    {
+        -input   => $pathname,
+        -message => "ACTION missing\n",
+        -exitval => 1,
+        -output  => \*STDERR
+    }
+) unless $action;
 
 pod2usage(
     {
+        -input   => $pathname,
         -message => "ACTION '$action' not supported\n",
         -exitval => 1,
         -output  => \*STDERR
@@ -240,7 +252,7 @@ sub purge_sessions {
 
     if ( defined $capo->fw_status ) {
 
-	my $lock_handle = Captive::Portal::LockHandle->new(
+        my $lock_handle = Captive::Portal::LockHandle->new(
             file     => $lock_file,
             shared   => 0,
             blocking => 0,

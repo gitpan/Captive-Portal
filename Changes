@@ -1,5 +1,8 @@
 Revision history for Captive::Portal
 
+2.28    Fri, 20 Jan 2012 11:02:07 +0100
+	* fixed pod2usage error in capo-ctl.pl
+
 2.27    Thu, 19 Jan 2012 21:33:25 +0100
 	* hint for ipset/capo version mismatch in INSTALL file
 
