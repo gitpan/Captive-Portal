@@ -36,8 +36,8 @@ CONFIGURATION after INSTALLATION
 
 - You must adjust the configuration file to your local situation!
 
-- Captive::Portal needs execute permissions for iptables(8) and ipset(8) to set and change
-  the firewall-rules:
+- Captive::Portal needs execute permissions for iptables(8) and ipset(8)
+  to set and change the firewall-rules:
 
   You must add the following rule to the sudoers file, depending
   on the username of the http daemon:

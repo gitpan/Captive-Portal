@@ -9,9 +9,9 @@ die "OS unsupported\n" unless $^O =~ m/linux/i;
 my ($ipset_major_version) = `ipset -H 2>&1` =~ m/^ipset\s+v?([\d]).*$/ims;
 
 die 'OS unsupported --'
-  . "this ipset version v$ipset_major_version > v4, "
-  . "use Captive::Portal version >= 3.x\n"
-  if $ipset_major_version > 4;
+  . "this ipset version v$ipset_major_version < v5, "
+  . "use Captive::Portal version < 3.x\n"
+  if $ipset_major_version < 5;
 
 my $default_install_base = '/usr/local/capo';
 

@@ -3,7 +3,7 @@ package Captive::Portal;
 use strict;
 use warnings;
 
-our $VERSION = '2.28';
+our $VERSION = '3.01';
 
 =head1 NAME
 
@@ -60,13 +60,13 @@ The HTTP-server redirects the HTTP-request by a rewrite rule to an HTTPS-request
 
 The I<capo.fcgi> script, fired due to this redirected request, offers a splash/login page. After successful login the firewall is dynamically changed to allow this clients IP/MAC tuple for internet access by ipset(8):
 
-    ipset -A capo_sessions_ipset CLIENT_IP,CLIENT_MAC
+    ipset add capo_sessions_ipset CLIENT_IP,CLIENT_MAC
 
 =item 5.  SESSION LOGOUT
 
 The capo.fcgi script offers a status/logout page. After successful logout the firewall is dynamically changed to disallow this IP/MAC tuple for internet access.
 
-    ipset -D capo_sessions_ipset CLIENT_IP
+    ipset del capo_sessions_ipset CLIENT_IP
 
 =item 6. SESSION IDLE
 

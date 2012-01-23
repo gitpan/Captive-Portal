@@ -13,7 +13,7 @@ Does all stuff needed to dynamically update iptables and ipset.
 
 =cut
 
-our $VERSION = '2.28';
+our $VERSION = '3.01';
 
 use Log::Log4perl qw(:easy);
 use Try::Tiny;
@@ -95,7 +95,7 @@ sub fw_start_session {
         return 1;
     }
 
-    my @cmd = ( 'sudo', 'ipset', '-A', 'capo_sessions_ipset', "$ip,$mac" );
+    my @cmd = ( 'sudo', 'ipset', 'add', 'capo_sessions_ipset', "$ip,$mac" );
 
     my $error;
     try { $self->run_cmd(@cmd) } catch { $error = $_ };
@@ -122,7 +122,7 @@ sub fw_stop_session {
         return;
     }
 
-    my @cmd = ( 'sudo', 'ipset', '-D', 'capo_sessions_ipset', $ip, );
+    my @cmd = ( 'sudo', 'ipset', 'del', 'capo_sessions_ipset', $ip, );
 
     my $error;
     try { $self->run_cmd(@cmd) } catch { $error = $_ };
@@ -200,7 +200,7 @@ sub fw_status {
 =item $capo->fw_list_sessions()
 
 Parses the output of:
-    ipset -nL capo_sessions_ipset
+    ipset list capo_sessions_ipset
 
 and returns a hashref for the tuples { ip => mac, ... }
 
@@ -214,7 +214,7 @@ sub fw_list_sessions {
         return {};
     }
 
-    my @cmd = qw(sudo ipset -nL capo_sessions_ipset);
+    my @cmd = qw(sudo ipset list capo_sessions_ipset);
 
     my ( $stdout, $error );
     try { ($stdout) = $self->run_cmd(@cmd) } catch { $error = $_ };
@@ -232,7 +232,7 @@ sub fw_list_sessions {
 
     ####
     # parse the output of:
-    #    ipset -nL capo_sessions_ipset
+    #    ipset list capo_sessions_ipset
     #
     # this looks like:
     #----------------
@@ -253,10 +253,10 @@ sub fw_list_sessions {
     my $sessions = {};
     foreach my $line (@lines) {
 
-        # skip emtpy lines from ipset -nL
+        # skip emtpy lines from ipset list
         next if $line =~ m/^\s*$/;
 
-        # skip comment lines from ipset -nL
+        # skip comment lines from ipset list
         next if $line =~ m/:\s|:\Z/;
 
         $line =~ m/^\s* ($ip_quad_dec_rx) , ($mac_rx) \s* $/x;
@@ -296,13 +296,13 @@ sub fw_list_activity {
 
     my ( $stdout, $error );
     try {
-        $self->run_cmd(qw(sudo ipset -F capo_activity_swap_ipset));
+        $self->run_cmd(qw(sudo ipset flush capo_activity_swap_ipset));
 
         $self->run_cmd(
-            qw(sudo ipset --swap capo_activity_ipset capo_activity_swap_ipset)
+            qw(sudo ipset swap capo_activity_ipset capo_activity_swap_ipset)
         );
 
-        ($stdout) = $self->run_cmd(qw(sudo ipset -nL capo_activity_swap_ipset));
+        ($stdout) = $self->run_cmd(qw(sudo ipset list capo_activity_swap_ipset));
     }
     catch {
         $error = $_;
@@ -321,7 +321,7 @@ sub fw_list_activity {
 
     ####
     # parse the output of:
-    #    ipset -nL capo_activity_ipset
+    #    ipset list capo_activity_ipset
     #
     # this looks like:
     #----------------
@@ -342,10 +342,10 @@ sub fw_list_activity {
     my $active_clients = {};
     foreach my $line (@lines) {
 
-        # skip emtpy lines from ipset -nL
+        # skip emtpy lines from ipset list
         next if $line =~ m/^\s*$/;
 
-        # skip comment lines from ipset -nL
+        # skip comment lines from ipset list
         next if $line =~ m/:\s|:\Z/;
 
         $line =~ m/^\s* ($ip_quad_dec_rx) , ($mac_rx) \s* $/x;

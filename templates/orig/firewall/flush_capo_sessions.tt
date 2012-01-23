@@ -2,7 +2,7 @@
 # flush the capo_sessions ipset map for clearing sessions
 ##########################################################
 
-sudo ipset -F capo_sessions_ipset
+sudo ipset flush capo_sessions_ipset
 
 # vim: sw=2 ft=sh
 

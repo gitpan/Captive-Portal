@@ -6,26 +6,25 @@
 # chain to mark authenticated traffic, clients get dynamically inserted/removed
 # first rule always checks if already MARKed
 #-----------------------------------------------------------------------------------------
-sudo ipset -N capo_sessions_ipset macipmap --network [%- capture_net %] 
+sudo ipset create capo_sessions_ipset bitmap:ip,mac range [%- capture_net %] 
 
 sudo iptables -t mangle -N capo_sessions
 
-# mark packets from authenticated clients as auth
-sudo iptables -t mangle -A capo_sessions -m set --match-set capo_sessions_ipset src -j MARK --set-mark 1
+# mark packets from authenticated clients ip/mac as auth
+sudo iptables -t mangle -A capo_sessions -m set --match-set capo_sessions_ipset src,src -j MARK --set-mark 1
 
 #-----------------------------------------------------------------------------------------
 # chain to register all outgoing traffic with ip/mac for IDLE checks by purger
 #-----------------------------------------------------------------------------------------
-sudo ipset -N capo_activity_ipset      macipmap --network [%- capture_net %] 
-sudo ipset -N capo_activity_swap_ipset macipmap --network [%- capture_net %] 
+sudo ipset create capo_activity_ipset      bitmap:ip,mac range [%- capture_net %] 
+sudo ipset create capo_activity_swap_ipset bitmap:ip,mac range [%- capture_net %] 
 
 sudo iptables -t mangle -N capo_activity
 
-# first test, else del/set active client in activity ipset
-sudo iptables -t mangle -A capo_activity -m set --match-set capo_activity_ipset src -j RETURN
-
+# first test ip/mac, else delete ip and then set active client ip/mac in activity ipset
+sudo iptables -t mangle -A capo_activity -m set --match-set capo_activity_ipset src,src -j RETURN
 sudo iptables -t mangle -A capo_activity -j SET --del-set capo_activity_ipset src
-sudo iptables -t mangle -A capo_activity -j SET --add-set capo_activity_ipset src
+sudo iptables -t mangle -A capo_activity -j SET --add-set capo_activity_ipset src,src
 
 #-----------------------------------------------------------------------------------------
 # chains to mark static allowed traffic for nets and services, like DNS, DHCP, VPN, ...
@@ -72,7 +71,7 @@ sudo iptables -t mangle -N capo_open_clients
 # allow defined open networks
 #-------------------------------------------------------------------------------------------
 
-sudo ipset -N capo_open_map_ipset iptreemap
+sudo ipset create capo_open_map_ipset hash:net
 
 sudo iptables -t mangle -N capo_open_map
 sudo iptables -t mangle -A capo_open_map -m set --match-set capo_open_map_ipset dst -j MARK --set-mark 1
@@ -80,7 +79,7 @@ sudo iptables -t mangle -A capo_open_map -m set --match-set capo_open_map_ipset 
 [% UNLESS open_networks; THROW 'open_networks undefined in config_file'; END %]
 
 [% FOREACH network IN open_networks %]
-  sudo ipset -A capo_open_map_ipset [%- network -%]
+  sudo ipset add capo_open_map_ipset [%- network -%]
 [% END %]
 
 #-------------------------------------------------------------------------------------------
@@ -91,7 +90,7 @@ sudo iptables -t mangle -A capo_open_map -m set --match-set capo_open_map_ipset 
 
 [% FOREACH server IN ipv4_aton(open_servers) %]
 
-  sudo ipset -A capo_open_map_ipset [%- server -%]
+  sudo ipset add capo_open_map_ipset [%- server -%]
 
 [% END %]
 
