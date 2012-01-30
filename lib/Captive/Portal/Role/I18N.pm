@@ -9,7 +9,7 @@ Captive::Portal::Role::I18N - utils for internationalization
 
 =cut
 
-our $VERSION = '3.01';
+our $VERSION = '3.11';
 
 use Log::Log4perl qw(:easy);
 use Scalar::Util qw(looks_like_number);

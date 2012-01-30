@@ -3,7 +3,7 @@
 use strict;
 use warnings;
 
-our $VERSION = '3.01';
+our $VERSION = '3.11';
 
 =head1 NAME
 
@@ -300,16 +300,16 @@ sub list_sessions {
     print "IPSET MEMBERS:\n";
     print '-' x 80 . "\n";
 
-    if ( not defined $capo->fw_status ) {
-        print "Firewall stopped!\n";
-    }
-    else {
-        my $ipset_members = $capo->fw_list_sessions;
+    my $ipset_members = $capo->fw_list_sessions;
 
+    if ( defined $ipset_members ) {
         foreach my $ip ( sort keys %$ipset_members ) {
             printf "%-15.15s|%-17.17s\n", $ip, $ipset_members->{$ip};
         }
+    } else {
+        print "Firewall stopped!\n";
     }
+
     print '-' x 80 . "\n";
 
     DEBUG 'listing capo sessions ...';

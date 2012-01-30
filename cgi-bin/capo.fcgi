@@ -3,7 +3,7 @@
 use strict;
 use warnings;
 
-our $VERSION = '3.01';
+our $VERSION = '3.11';
 
 =head1 NAME
 
@@ -20,6 +20,7 @@ This script is started by the HTTP server. It can be used as a simple CGI script
 =cut
 
 use sigtrap qw(die untrapped normal-signals);
+use POSIX ();
 
 use FindBin qw($Bin $Script);
 use lib "$Bin/../lib";
@@ -129,7 +130,17 @@ my $capo = Captive::Portal->new( cfg_file => $cfg_file );
 
 # main-loop
 while ( my $q = CGI::Fast->new ) {
+
     $capo->run($q);
+
+    # We are a long running process with lots of children started
+    # by run_cmd. Some of them will time out and become zombies.
+    # Reap them after each HTTP request, nonblocking.
+    #
+    while ( ( my $pid = POSIX::waitpid( -1, POSIX::WNOHANG ) ) > 1 ) {
+        WARN "reaped child: $pid\n";
+    }
+
 }
 
 =head1 AUTHOR

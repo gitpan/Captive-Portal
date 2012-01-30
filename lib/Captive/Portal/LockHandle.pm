@@ -9,7 +9,7 @@ Captive::Portal::LockHandle - lock handling for Captive::Portal
 
 =cut
 
-our $VERSION = '3.01';
+our $VERSION = '3.11';
 
 use Log::Log4perl qw(:easy);
 use Try::Tiny;

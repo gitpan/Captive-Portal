@@ -13,7 +13,7 @@ Does all stuff needed to dynamically update iptables and ipset.
 
 =cut
 
-our $VERSION = '3.01';
+our $VERSION = '3.11';
 
 use Log::Log4perl qw(:easy);
 use Try::Tiny;
@@ -44,35 +44,61 @@ Send a ping to the clients to check IDLE state if USE_FPING in config file is tr
 =cut
 
 sub fw_trigger_clients {
-    my $self     = shift;
-    my @ips2ping = @_;
+  my $self     = shift;
+  my @ips2ping = @_;
 
-    return unless @ips2ping;
+  return unless @ips2ping;
 
-    unless ( $self->cfg->{USE_FPING} ) {
-        INFO "USE_FPING OFF in config, don't trigger targets";
-        return;
-    }
+  unless ( $self->cfg->{USE_FPING} ) {
+    INFO "USE_FPING OFF in config, don't trigger targets";
+    return;
+  }
 
-    my @cmd = (
-        'sudo', 'fping',
-        @{ $self->cfg->{FPING_OPTIONS} },
-        @ips2ping,
-        {
-            timeout           => 2_000_000,
-            ignore_exit_codes => [ 1, ],
-        },
-    );
+  my @cmd = (
+    'sudo', 'fping',
+    @{ $self->cfg->{FPING_OPTIONS} },
+    @ips2ping,
+    {
+      timeout           => 2_000_000,
+      ignore_exit_codes => [ 1, ],
+    },
+  );
 
-    INFO "fping, trigger @ips2ping";
+  INFO "fping, trigger @ips2ping";
 
-    my $error;
-    try { $self->run_cmd(@cmd) } catch { $error = $_ };
+  my $error;
+  try { $self->run_cmd(@cmd) } catch { $error = $_ };
 
-    # ignore fping timeouts
-    if ( $error && $error !~ m/timeout/i ) {
-        ERROR $error;
-    }
+  # ignore fping timeouts
+  if ( $error && $error !~ m/timeout/i ) {
+    ERROR $error;
+  }
+}
+
+=item $capo->fw_ipset_version()
+
+fw_ipset_version checks for the ipset() major version number. ipset() version >= 4 introduced an incompatible API and CLI. 
+
+=cut
+
+sub fw_ipset_version {
+  my $self = shift;
+
+  if ( $self->cfg->{MOCK_FIREWALL} ) {
+    DEBUG 'MOCK_FIREWALL, mocking ipset major version number 4';
+    return 4;
+  }
+
+  my @cmd = ( 'sudo', 'ipset', '--version' );
+
+  my ( $stdout, $error );
+  try { ($stdout) = $self->run_cmd(@cmd) } catch { $error = $_ };
+
+  LOGDIE $error if $error;
+
+  my ($ipset_major_version) = $stdout =~ m/^ipset\s+v?([\d+]).*$/ims;
+
+  return $ipset_major_version;
 }
 
 =item $capo->fw_start_session($ip_address, $mac_address)
@@ -82,27 +108,27 @@ Add tuple IP/MAC to the ipset named I<capo_sessions_ipset>. Members of this ipse
 =cut
 
 sub fw_start_session {
-    my $self = shift;
+  my $self = shift;
 
-    my $ip = shift
-      or LOGDIE("missing session IP");
+  my $ip = shift
+    or LOGDIE("missing session IP");
 
-    my $mac = shift
-      or LOGDIE("missing session MAC");
+  my $mac = shift
+    or LOGDIE("missing session MAC");
 
-    if ( $self->cfg->{MOCK_FIREWALL} ) {
-        DEBUG 'MOCK_FIREWALL, mocking start session';
-        return 1;
-    }
+  if ( $self->cfg->{MOCK_FIREWALL} ) {
+    DEBUG 'MOCK_FIREWALL, mocking start session';
+    return 1;
+  }
 
-    my @cmd = ( 'sudo', 'ipset', 'add', 'capo_sessions_ipset', "$ip,$mac" );
+  my @cmd = ( 'sudo', 'ipset', '--add', 'capo_sessions_ipset', "$ip,$mac" );
 
-    my $error;
-    try { $self->run_cmd(@cmd) } catch { $error = $_ };
+  my $error;
+  try { $self->run_cmd(@cmd) } catch { $error = $_ };
 
-    die "$error\n" if $error;
+  die "$error\n" if $error;
 
-    return;
+  return;
 }
 
 =item $capo->fw_stop_session($ip_address, $mac_address)
@@ -112,24 +138,24 @@ Delete tuple IP/MAC from the ipset named I<capo_sessions_ipset>.
 =cut
 
 sub fw_stop_session {
-    my $self = shift;
+  my $self = shift;
 
-    my $ip = shift
-      or LOGDIE("missing session IP");
+  my $ip = shift
+    or LOGDIE("missing session IP");
 
-    if ( $self->cfg->{MOCK_FIREWALL} ) {
-        DEBUG 'MOCK_FIREWALL, mocking stop session';
-        return;
-    }
-
-    my @cmd = ( 'sudo', 'ipset', 'del', 'capo_sessions_ipset', $ip, );
-
-    my $error;
-    try { $self->run_cmd(@cmd) } catch { $error = $_ };
-
-    die "$error\n" if $error;
-
+  if ( $self->cfg->{MOCK_FIREWALL} ) {
+    DEBUG 'MOCK_FIREWALL, mocking stop session';
     return;
+  }
+
+  my @cmd = ( 'sudo', 'ipset', '--del', 'capo_sessions_ipset', $ip, );
+
+  my $error;
+  try { $self->run_cmd(@cmd) } catch { $error = $_ };
+
+  die "$error\n" if $error;
+
+  return;
 }
 
 =item $capo->fw_reload_sessions()
@@ -139,41 +165,41 @@ This method is called during startup of the Captive::Portal when the old state o
 =cut
 
 sub fw_reload_sessions {
-    my $self = shift;
+  my $self = shift;
 
-    DEBUG "reload firewall rules for cached sessions";
+  DEBUG "reload firewall rules for cached sessions";
 
-    # list all the cached sessions from disk and install rules
-    foreach my $ip ( $self->list_sessions_from_disk ) {
+  # list all the cached sessions from disk and install rules
+  foreach my $ip ( $self->list_sessions_from_disk ) {
 
-        # fetch session data, lock timeout 1s
+    # fetch session data, lock timeout 1s
 
-        my $lock_handle = $self->get_session_lock_handle(
-            key      => $ip,
-            blocking => 1,
-            shared   => 0,
-            timeout  => 1_000_000,    # 1_000_000 us = 1s
-        );
+    my $lock_handle = $self->get_session_lock_handle(
+      key      => $ip,
+      blocking => 1,
+      shared   => 0,
+      timeout  => 1_000_000,    # 1_000_000 us = 1s
+    );
 
-        my $session = $self->read_session_handle($lock_handle);
+    my $session = $self->read_session_handle($lock_handle);
 
-        unless ($session) {
-            DEBUG "delete empty or malformed session for $ip";
-            $self->delete_session_from_disk($ip);
-            next;
-        }
-
-        next unless $session->{STATE} eq 'active';
-
-        my $error;
-        try { $self->fw_start_session( $ip, $session->{MAC} ) }
-        catch { $error = $_ };
-
-        if ($error) {
-            ERROR($error);
-            $self->delete_session_from_disk($ip);
-        }
+    unless ($session) {
+      DEBUG "delete empty or malformed session for $ip";
+      $self->delete_session_from_disk($ip);
+      next;
     }
+
+    next unless $session->{STATE} eq 'active';
+
+    my $error;
+    try { $self->fw_start_session( $ip, $session->{MAC} ) }
+    catch { $error = $_ };
+
+    if ($error) {
+      ERROR($error);
+      $self->delete_session_from_disk($ip);
+    }
+  }
 }
 
 =item $capo->fw_status()
@@ -183,18 +209,18 @@ Counts the members of the ipset 'capo_sessions_ipset'. Returns the number of mem
 =cut
 
 sub fw_status {
-    my $self = shift;
+  my $self = shift;
 
-    my ( $sessions, $error );
-    try { $sessions = $self->fw_list_sessions } catch { $error = $_ };
+  my ( $sessions, $error );
+  try { $sessions = $self->fw_list_sessions } catch { $error = $_ };
 
-    return if $error;
-    return unless defined $sessions;
+  return if $error;
+  return unless defined $sessions;
 
-    my $count = scalar keys %$sessions;
-    DEBUG "firewall status: running, $count sessions installed";
+  my $count = scalar keys %$sessions;
+  DEBUG "firewall status: running, $count sessions installed";
 
-    return $count;
+  return $count;
 }
 
 =item $capo->fw_list_sessions()
@@ -207,71 +233,80 @@ and returns a hashref for the tuples { ip => mac, ... }
 =cut
 
 sub fw_list_sessions {
-    my $self = shift;
+  my $self = shift;
 
-    if ( $self->cfg->{MOCK_FIREWALL} ) {
-        DEBUG 'MOCK_FIREWALL, mocking ipset';
-        return {};
+  if ( $self->cfg->{MOCK_FIREWALL} ) {
+    DEBUG 'MOCK_FIREWALL, mocking ipset';
+    return {};
+  }
+
+  my @cmd;
+
+  # sigh, ipset() changed API after version >= 4
+  #
+  if ($self->cfg->{IPTABLES}{ipset_version} >= 4 ) {
+    @cmd = qw(sudo ipset --list capo_sessions_ipset);
+  } else {
+    @cmd = qw(sudo ipset -n --list capo_sessions_ipset);
+  }
+
+  my ( $stdout, $error );
+  try { ($stdout) = $self->run_cmd(@cmd) } catch { $error = $_ };
+
+  ERROR $error if $error;
+  die $error   if $error;
+
+  my @lines = split "\n+", $stdout;
+
+  # ipv4 address in quad decimal
+  my $ip_quad_dec_rx = qr(\d{1,3} \. \d{1,3} \. \d{1,3} \. \d{1,3})x;
+
+  # regex for MAC address matching
+  my $hex_digit_rx = qr/[A-F,a-f,0-9]/;
+  my $mac_rx       = qr/(?:$hex_digit_rx{2}:){5} $hex_digit_rx{2}/x;
+
+  ####
+  # parse the output of:
+  #    ipset list capo_sessions_ipset
+  #
+  # this looks like:
+  #----------------
+  # Name: capo_sessions_ipset
+  # Type: macipmap
+  # References: 2
+  # Default binding:
+  # Header: from: 10.10.0.0 to: 10.10.0.255
+  # Members:
+  # 10.10.0.2,00:15:2C:FA:BB:80
+  # 10.10.0.3,00:15:2C:FA:DB:80
+  # 10.10.0.15,00:11:63:9C:9B:85
+  # 10.10.0.21,00:1F:4F:EC:B9:42
+  # 10.10.0.30,00:54:81:21:7B:01
+  # ...
+  # Bindings:
+
+  my $sessions = {};
+  foreach my $line (@lines) {
+
+    # skip emtpy lines from ipset list
+    next if $line =~ m/^\s*$/;
+
+    # skip comment lines from ipset list
+    next if $line =~ m/:\s|:\Z/;
+
+    $line =~ m/^\s* ($ip_quad_dec_rx) , ($mac_rx) \s* $/x;
+    my $ip  = $1;
+    my $mac = $2;
+
+    unless ( $ip && $mac ) {
+      ERROR "Couldn't parse line: $line";
+      next;
     }
 
-    my @cmd = qw(sudo ipset list capo_sessions_ipset);
+    $sessions->{$ip} = uc $mac;
+  }
 
-    my ( $stdout, $error );
-    try { ($stdout) = $self->run_cmd(@cmd) } catch { $error = $_ };
-
-    die $error if $error;
-
-    my @lines = split "\n+", $stdout;
-
-    # ipv4 address in quad decimal
-    my $ip_quad_dec_rx = qr(\d{1,3} \. \d{1,3} \. \d{1,3} \. \d{1,3})x;
-
-    # regex for MAC address matching
-    my $hex_digit_rx = qr/[A-F,a-f,0-9]/;
-    my $mac_rx       = qr/(?:$hex_digit_rx{2}:){5} $hex_digit_rx{2}/x;
-
-    ####
-    # parse the output of:
-    #    ipset list capo_sessions_ipset
-    #
-    # this looks like:
-    #----------------
-    # Name: capo_sessions_ipset
-    # Type: macipmap
-    # References: 2
-    # Default binding:
-    # Header: from: 10.10.0.0 to: 10.10.0.255
-    # Members:
-    # 10.10.0.2,00:15:2C:FA:BB:80
-    # 10.10.0.3,00:15:2C:FA:DB:80
-    # 10.10.0.15,00:11:63:9C:9B:85
-    # 10.10.0.21,00:1F:4F:EC:B9:42
-    # 10.10.0.30,00:54:81:21:7B:01
-    # ...
-    # Bindings:
-
-    my $sessions = {};
-    foreach my $line (@lines) {
-
-        # skip emtpy lines from ipset list
-        next if $line =~ m/^\s*$/;
-
-        # skip comment lines from ipset list
-        next if $line =~ m/:\s|:\Z/;
-
-        $line =~ m/^\s* ($ip_quad_dec_rx) , ($mac_rx) \s* $/x;
-        my $ip  = $1;
-        my $mac = $2;
-
-        unless ( $ip && $mac ) {
-            ERROR "Couldn't parse line: $line";
-            next;
-        }
-
-        $sessions->{$ip} = uc $mac;
-    }
-
-    return $sessions;
+  return $sessions;
 }
 
 =item $capo->fw_list_activity()
@@ -287,80 +322,89 @@ in order to detect idle clients. The firewall rules add active clients to the ip
 =cut
 
 sub fw_list_activity {
-    my $self = shift;
+  my $self = shift;
 
-    if ( $self->cfg->{MOCK_FIREWALL} ) {
-        DEBUG 'MOCK_FIREWALL, mocking ipset';
-        return {};
-    }
+  if ( $self->cfg->{MOCK_FIREWALL} ) {
+    DEBUG 'MOCK_FIREWALL, mocking ipset';
+    return {};
+  }
 
-    my ( $stdout, $error );
-    try {
-        $self->run_cmd(qw(sudo ipset flush capo_activity_swap_ipset));
+  my ( $stdout, $error );
+  try {
+    $self->run_cmd(qw(sudo ipset --flush capo_activity_swap_ipset));
 
-        $self->run_cmd(
-            qw(sudo ipset swap capo_activity_ipset capo_activity_swap_ipset)
-        );
+    $self->run_cmd(
+      qw(sudo ipset --swap capo_activity_ipset capo_activity_swap_ipset));
 
-        ($stdout) = $self->run_cmd(qw(sudo ipset list capo_activity_swap_ipset));
-    }
-    catch {
-        $error = $_;
-    };
-
-    die $error if $error;
-
-    my @lines = split "\n+", $stdout;
-
-    # ipv4 address in quad decimal
-    my $ip_quad_dec_rx = qr(\d{1,3} \. \d{1,3} \. \d{1,3} \. \d{1,3})x;
-
-    # regex for MAC address matching
-    my $hex_digit_rx = qr/[A-F,a-f,0-9]/;
-    my $mac_rx       = qr/(?:$hex_digit_rx{2}:){5} $hex_digit_rx{2}/x;
-
-    ####
-    # parse the output of:
-    #    ipset list capo_activity_ipset
+    # sigh, ipset() changed API after version >= 4
     #
-    # this looks like:
-    #----------------
-    # Name: capo_activity_ipset
-    # Type: macipmap
-    # References: 2
-    # Default binding:
-    # Header: from: 10.10.0.0 to: 10.10.0.255
-    # Members:
-    # 10.10.0.2,00:15:2C:FA:BB:80
-    # 10.10.0.3,00:15:2C:FA:DB:80
-    # 10.10.0.15,00:11:63:9C:9B:85
-    # 10.10.0.21,00:1F:4F:EC:B9:42
-    # 10.10.0.30,00:54:81:21:7B:01
-    # ...
-    # Bindings:
-
-    my $active_clients = {};
-    foreach my $line (@lines) {
-
-        # skip emtpy lines from ipset list
-        next if $line =~ m/^\s*$/;
-
-        # skip comment lines from ipset list
-        next if $line =~ m/:\s|:\Z/;
-
-        $line =~ m/^\s* ($ip_quad_dec_rx) , ($mac_rx) \s* $/x;
-        my $ip  = $1;
-        my $mac = $2;
-
-        unless ( $ip && $mac ) {
-            ERROR "Couldn't parse line: $line";
-            next;
-        }
-
-        $active_clients->{$ip} = uc $mac;
+    if ( $self->cfg->{IPTABLES}{ipset_version} >= 4 ) {
+      ($stdout) =
+        $self->run_cmd(qw(sudo ipset --list capo_activity_swap_ipset));
+    }
+    else {
+      ($stdout) =
+        $self->run_cmd(qw(sudo ipset -n --list capo_activity_swap_ipset));
     }
 
-    return $active_clients;
+  }
+  catch {
+    $error = $_;
+  };
+
+  die $error if $error;
+
+  my @lines = split "\n+", $stdout;
+
+  # ipv4 address in quad decimal
+  my $ip_quad_dec_rx = qr(\d{1,3} \. \d{1,3} \. \d{1,3} \. \d{1,3})x;
+
+  # regex for MAC address matching
+  my $hex_digit_rx = qr/[A-F,a-f,0-9]/;
+  my $mac_rx       = qr/(?:$hex_digit_rx{2}:){5} $hex_digit_rx{2}/x;
+
+  ####
+  # parse the output of:
+  #    ipset list capo_activity_ipset
+  #
+  # this looks like:
+  #----------------
+  # Name: capo_activity_ipset
+  # Type: macipmap
+  # References: 2
+  # Default binding:
+  # Header: from: 10.10.0.0 to: 10.10.0.255
+  # Members:
+  # 10.10.0.2,00:15:2C:FA:BB:80
+  # 10.10.0.3,00:15:2C:FA:DB:80
+  # 10.10.0.15,00:11:63:9C:9B:85
+  # 10.10.0.21,00:1F:4F:EC:B9:42
+  # 10.10.0.30,00:54:81:21:7B:01
+  # ...
+  # Bindings:
+
+  my $active_clients = {};
+  foreach my $line (@lines) {
+
+    # skip emtpy lines from ipset list
+    next if $line =~ m/^\s*$/;
+
+    # skip comment lines from ipset list
+    next if $line =~ m/:\s|:\Z/;
+
+    $line =~ m/^\s* ($ip_quad_dec_rx) , ($mac_rx) \s* $/x;
+    my $ip  = $1;
+    my $mac = $2;
+
+    unless ( $ip && $mac ) {
+      ERROR "Couldn't parse line: $line";
+      next;
+    }
+
+    $active_clients->{$ip} = uc $mac;
+  }
+
+  return $active_clients;
 }
 
 =item $capo->fw_clear_sessions()
@@ -370,9 +414,9 @@ Flushes the ipset 'capo_sessions_ipset', normally used in start/stop scripts, se
 =cut
 
 sub fw_clear_sessions {
-    my $self = shift;
+  my $self = shift;
 
-    $self->$_fw_install_rules('flush_capo_sessions');
+  $self->$_fw_install_rules('flush_capo_sessions');
 }
 
 =item $capo->fw_start()
@@ -382,23 +426,23 @@ Calls the firewall templates in the order flush, init, mangle, nat and filter, s
 =cut
 
 sub fw_start {
-    my $self = shift;
+  my $self = shift;
 
-    if ( $self->cfg->{MOCK_FIREWALL} ) {
-        DEBUG 'MOCK_FIREWALL, mocking start firewall';
-        return 1;
-    }
+  if ( $self->cfg->{MOCK_FIREWALL} ) {
+    DEBUG 'MOCK_FIREWALL, mocking start firewall';
+    return 1;
+  }
 
-    # proper order of steps is essential for uninterrupted reloads
+  # proper order of steps is essential for uninterrupted reloads
 
-    foreach my $step (qw/flush init mangle nat filter/) {
+  foreach my $step (qw/flush init mangle nat filter/) {
 
-        $self->$_fw_install_rules($step);
+    $self->$_fw_install_rules($step);
 
-        # after the init step prefill the capo_sessions
-        # with cached sessions from disk
-        $self->fw_reload_sessions if $step eq 'init';
-    }
+    # after the init step prefill the capo_sessions
+    # with cached sessions from disk
+    $self->fw_reload_sessions if $step eq 'init';
+  }
 }
 
 =item $capo->fw_stop()
@@ -408,14 +452,14 @@ Calls the firewall template I<flush>, see the corresponding firewall template un
 =cut
 
 sub fw_stop {
-    my $self = shift;
+  my $self = shift;
 
-    if ( $self->cfg->{MOCK_FIREWALL} ) {
-        DEBUG 'MOCK_FIREWALL, mocking stop firewall';
-        return 1;
-    }
+  if ( $self->cfg->{MOCK_FIREWALL} ) {
+    DEBUG 'MOCK_FIREWALL, mocking stop firewall';
+    return 1;
+  }
 
-    $self->$_fw_install_rules('flush');
+  $self->$_fw_install_rules('flush');
 }
 
 =item $capo->fw_purge_sessions()
@@ -425,343 +469,341 @@ Detect idle sessions, mark them as IDLE in disk cache and remove entry in ipset.
 =cut
 
 sub fw_purge_sessions {
-    my $self = shift;
+  my $self = shift;
 
-    DEBUG 'running ' . __PACKAGE__ . ' fw_purge_sessions ...';
+  DEBUG 'running ' . __PACKAGE__ . ' fw_purge_sessions ...';
 
-    if ( $self->cfg->{MOCK_FIREWALL} ) {
-        DEBUG 'MOCK_FIREWALL, mocking purge';
-        return 1;
+  if ( $self->cfg->{MOCK_FIREWALL} ) {
+    DEBUG 'MOCK_FIREWALL, mocking purge';
+    return 1;
+  }
+
+  my $this_run = time();
+
+  ######
+  # 3 sources of information about a session
+  #
+  # - session cache on disk with ip/mac/user/state/timestamps/...
+  # - ipset capo_sessions_ipset   with ip address as key, mac address as value
+  # - ipset capo_activity_ipset   with ip address as key, mac address as value
+  #
+
+  my $fw_sessions = $self->fw_list_sessions;
+  my $fw_activity = $self->fw_list_activity;
+
+  # what clients need a trigger before going idle?
+  my @trigger_targets;
+
+  # Walk over all disk sessions, be aware, only current session is locked!
+
+  # There will be race conditions with running fcgi processes
+  # for sessions not currently handled (locked), but see below
+  # for handling these races.
+  #
+  # This is by intention not locking for a long time and delaying
+  # http responses!
+
+  foreach my $ip ( $self->list_sessions_from_disk ) {
+
+    my ( $lock_handle, $error );
+    try {
+
+      # get the EXCL lock for the session file
+      # hold this lock until next loop iteration
+      # via lexical scope of $lock_handle
+      #
+      $lock_handle = $self->get_session_lock_handle(
+        key      => $ip,
+        blocking => 1,
+        shared   => 0,         # EXCL
+        timeout  => 50_000,    # 50_000 us -> 50ms
+      );
+
+    }
+    catch { $error = $_ };
+
+    if ($error) {
+      WARN $error;    # could not get the EXCL lock, skip this session
+      next;           # session
     }
 
-    my $this_run = time();
+    my $session = $self->read_session_handle($lock_handle);
 
-    ######
-    # 3 sources of information about a session
-    #
-    # - session cache on disk with ip/mac/user/state/timestamps/...
-    # - ipset capo_sessions_ipset   with ip address as key, mac address as value
-    # - ipset capo_activity_ipset   with ip address as key, mac address as value
-    #
+    unless ($session) {
+      DEBUG "delete empty or malformed session: $ip";
+      $self->delete_session_from_disk($ip);
 
-    my $fw_sessions = $self->fw_list_sessions;
-    my $fw_activity = $self->fw_list_activity;
+      next;           # session
+    }
 
-    # what clients need a trigger before going idle?
-    my @trigger_targets;
+    # The session ip must also be in the ipset capo_sessions_ipset.
+    # fetch and delete it. If there are still ipset entries
+    # left after the loop over all sessions, handle it as error
+    # or as race condition at end of the purger
 
-    # Walk over all disk sessions, be aware, only current session is locked!
+    my $fw_session_entry = delete $fw_sessions->{$ip};
 
-    # There will be race conditions with running fcgi processes
-    # for sessions not currently handled (locked), but see below
-    # for handling these races.
-    #
-    # This is by intention not locking for a long time and delaying
-    # http responses!
+    # tmp store for easier logging, no other functionality
+    my $mac  = $session->{MAC};
+    my $user = $session->{USERNAME};
 
-    foreach my $ip ( $self->list_sessions_from_disk ) {
-
-        my ( $lock_handle, $error );
-        try {
-
-            # get the EXCL lock for the session file
-            # hold this lock until next loop iteration
-            # via lexical scope of $lock_handle
-            #
-            $lock_handle = $self->get_session_lock_handle(
-                key      => $ip,
-                blocking => 1,
-                shared   => 0,         # EXCL
-                timeout  => 50_000,    # 50_000 us -> 50ms
-            );
-
-        }
-        catch { $error = $_ };
-
-        if ($error) {
-            WARN $error;    # could not get the EXCL lock, skip this session
-            next;           # session
-        }
-
-        my $session = $self->read_session_handle($lock_handle);
-
-        unless ($session) {
-            DEBUG "delete empty or malformed session: $ip";
-            $self->delete_session_from_disk($ip);
-
-            next;           # session
-        }
-
-        # The session ip must also be in the ipset capo_sessions_ipset.
-        # fetch and delete it. If there are still ipset entries
-        # left after the loop over all sessions, handle it as error
-        # or as race condition at end of the purger
-
-        my $fw_session_entry = delete $fw_sessions->{$ip};
-
-        # tmp store for easier logging, no other functionality
-        my $mac  = $session->{MAC};
-        my $user = $session->{USERNAME};
-
-        ######## let's start
-
-        ###########################################################
-        # remove old, inactive sessions after KEEP_OLD_STATE_PERIOD
-        ###########################################################
-
-        if ( $session->{STATE} ne 'active' ) {
-
-            # remove really old sessions not in active STATE
-            if ( $this_run - $session->{STOP_TIME} >
-                $self->cfg->{KEEP_OLD_STATE_PERIOD} )
-            {
-                INFO "$user/$ip/$mac"
-                  . ' -> delete old session from disk cache';
-
-                my $error;
-                try { $self->delete_session_from_disk($ip) }
-                catch { $error = $_ };
-
-                ERROR $error if $error;
-            }
-
-            next;    # session
-        }
-
-        ###############################################################
-        # SESSION_MAX limit reached, stop/mark active and idle sessions
-        ###############################################################
-
-        my $session_start = $session->{START_TIME};
-        my $session_max   = $self->cfg->{SESSION_MAX};
-
-        if (   ( $this_run - $session_start > $session_max )
-            && ( $session->{STATE} eq 'active' ) )
-        {
-
-            INFO "$user/$ip/$mac -> stopped, MAX_SESSION limit";
-
-            my $error;
-            try { $self->fw_stop_session($ip) } catch { $error = $_ };
-
-            ERROR $error if $error;
-
-            $session->{STATE}     = 'max-session-timeout';
-            $session->{STOP_TIME} = $this_run;
-
-            undef $error;
-            try {
-                $self->write_session_handle( $lock_handle, $session );
-            }
-            catch { $error = $_ };
-
-            ERROR $error if $error;
-
-            next;    # session
-        }
-
-        if (   ( $this_run - $session_start > $session_max )
-            && ( $session->{STATE} eq 'idle' ) )
-        {
-
-            INFO "$user/$ip/$mac -> stopped, MAX_SESSION limit";
-
-            $session->{STATE} = 'max-session-timeout';
-
-            undef $error;
-            try {
-                $self->write_session_handle( $lock_handle, $session );
-            }
-            catch { $error = $_ };
-
-            ERROR $error if $error;
-
-            next;    # session
-        }
-
-        next unless $session->{STATE} eq 'active';
-        ################################################################
-        # below this point we handle only sessions with STATE = active
-        ################################################################
-
-        ###########################################################
-        # ipset-entry was missing for current session at
-        # mainloop entry. Maybe it was a race condition.
-        # Check if there is still no ipset-entry for this session
-        # now we have the lock.
-        #
-        # We don't check this unconditionally for every session,
-        # this would be to expansive for thousand of clients.
-        ###########################################################
-
-        if (    ( not defined $fw_session_entry )
-            and ( not defined $self->fw_list_sessions->{$ip} ) )
-        {
-
-            WARN "$user/$ip/$mac -> delete session, ipset-entry missing";
-
-            my $error;
-            try { $self->delete_session_from_disk($ip); } catch { $error = $_ };
-
-            ERROR $error if $error;
-
-            next;    # session
-        }
-
-        ###########################################################
-        ###########################################################
-        # now start with the IDLE check for this active session
-        ###########################################################
-        ###########################################################
-
-        ###########################################################
-        # packets seen from this client during last purger period
-        # and not marked as idle candidate, skip to next session
-        ###########################################################
-
-        if (    ( exists $fw_activity->{$ip} )
-            and ( not $session->{IDLE_SINCE} ) )
-        {
-            next;    # session
-        }
-
-        ###########################################################
-        # packets seen from this client during last purger period
-        # but sometimes before marked as idle candidate, reset
-        # it to active
-        ###########################################################
-
-        if ( exists $fw_activity->{$ip} and $session->{IDLE_SINCE} ) {
-
-            INFO "$user/$ip/$mac -> withdraw idle candidate";
-
-            # update avtivity
-            $session->{IDLE_SINCE} = undef;
-
-            my $error;
-            try {
-                $self->write_session_handle( $lock_handle, $session );
-            }
-            catch { $error = $_ };
-            ERROR $error if $error;
-
-            next;    # session
-        }
-
-        ###########################################################
-        ###########################################################
-        # after that the client wasn't seen during purger period
-        ###########################################################
-        ###########################################################
-
-        ###########################################################
-        # max IDLE time reached?
-        ###########################################################
-
-        my $idle_since = $session->{IDLE_SINCE} || $this_run;
-
-        if ( $this_run - $idle_since >= $self->cfg->{IDLE_TIME} ) {
-
-            INFO "$user/$ip/$mac -> session is IDLE";
-
-            $session->{STATE}     = 'idle';
-            $session->{STOP_TIME} = $this_run;
-
-            my $error;
-            try {
-                $self->fw_stop_session($ip);
-                $self->write_session_handle( $lock_handle, $session );
-            }
-            catch { $error = $_ };
-            ERROR $error if $error;
-
-            next;    # session
-
-        }
-
-        ###########################################################
-        # IDLE_TIME not reached, trigger the client
-        # the first time it's an idle candidate
-        ###########################################################
-
-        unless ( defined $session->{IDLE_SINCE} ) {
-
-            INFO "$user/$ip/$mac -> idle candidate";
-
-            push @trigger_targets, $ip;
-
-            # mark as idle candidate
-            $session->{IDLE_SINCE} = $this_run;
-
-            my $error;
-            try {
-                $self->write_session_handle( $lock_handle, $session );
-            }
-            catch { $error = $_ };
-            ERROR $error if $error;
-
-            next;    # session
-        }
-
-    }    # session mainloop end
+    ######## let's start
 
     ###########################################################
-    # trigger idle clients not seen during last purger period
+    # remove old, inactive sessions after KEEP_OLD_STATE_PERIOD
     ###########################################################
 
-    $self->fw_trigger_clients(@trigger_targets);
+    if ( $session->{STATE} ne 'active' ) {
 
-    ###########################################################
-    # Handle remaining ipset session entries with
-    # no corresponding session file. Be careful,
-    # maybe a race condition between purger and fcgi script
-    # was the reason for that inconsistency
-    ###########################################################
+      # remove really old sessions not in active STATE
+      if ( $this_run - $session->{STOP_TIME} >
+        $self->cfg->{KEEP_OLD_STATE_PERIOD} )
+      {
+        INFO "$user/$ip/$mac" . ' -> delete old session from disk cache';
 
-    foreach my $ip ( keys %{$fw_sessions} ) {
+        my $error;
+        try { $self->delete_session_from_disk($ip) } catch { $error = $_ };
 
-        # check if there is still no session file for that ipset entry
-        #
-        my ( $lock_handle, $error );
-        try {
-
-            # get the EXCL lock for the session
-            # hold this lock until next loop iteration
-            #
-            $lock_handle = $self->get_session_lock_handle(
-                key      => $ip,
-                blocking => 1,
-                shared   => 0,
-                timeout  => 50_000,    # 50_000 us -> 50ms
-            );
-
-        }
-        catch { $error = $_ };
-
-        if ($error) {
-            WARN $error;
-            next;
-        }
-
-        my $session = $self->read_session_handle($lock_handle);
-
-        # skip, now we have a valid session for this ipset session entry
-        next if $session;
-
-        # Still no session for this ipset session entry, but
-        # we have the lock, now we can check if the ipset entry
-        # is still set
-
-        next unless defined $self->fw_list_sessions->{$ip};
-
-        WARN "$ip -> delete ipset entry without session file";
-
-        undef $error;
-        try { $self->fw_stop_session($ip) } catch { $error = $_ };
         ERROR $error if $error;
+      }
 
-        next;
+      next;    # session
     }
+
+    ###############################################################
+    # SESSION_MAX limit reached, stop/mark active and idle sessions
+    ###############################################################
+
+    my $session_start = $session->{START_TIME};
+    my $session_max   = $self->cfg->{SESSION_MAX};
+
+    if ( ( $this_run - $session_start > $session_max )
+      && ( $session->{STATE} eq 'active' ) )
+    {
+
+      INFO "$user/$ip/$mac -> stopped, MAX_SESSION limit";
+
+      my $error;
+      try { $self->fw_stop_session($ip) } catch { $error = $_ };
+
+      ERROR $error if $error;
+
+      $session->{STATE}     = 'max-session-timeout';
+      $session->{STOP_TIME} = $this_run;
+
+      undef $error;
+      try {
+        $self->write_session_handle( $lock_handle, $session );
+      }
+      catch { $error = $_ };
+
+      ERROR $error if $error;
+
+      next;    # session
+    }
+
+    if ( ( $this_run - $session_start > $session_max )
+      && ( $session->{STATE} eq 'idle' ) )
+    {
+
+      INFO "$user/$ip/$mac -> stopped, MAX_SESSION limit";
+
+      $session->{STATE} = 'max-session-timeout';
+
+      undef $error;
+      try {
+        $self->write_session_handle( $lock_handle, $session );
+      }
+      catch { $error = $_ };
+
+      ERROR $error if $error;
+
+      next;    # session
+    }
+
+    next unless $session->{STATE} eq 'active';
+    ################################################################
+    # below this point we handle only sessions with STATE = active
+    ################################################################
+
+    ###########################################################
+    # ipset-entry was missing for current session at
+    # mainloop entry. Maybe it was a race condition.
+    # Check if there is still no ipset-entry for this session
+    # now we have the lock.
+    #
+    # We don't check this unconditionally for every session,
+    # this would be to expansive for thousand of clients.
+    ###########################################################
+
+    if (  ( not defined $fw_session_entry )
+      and ( not defined $self->fw_list_sessions->{$ip} ) )
+    {
+
+      WARN "$user/$ip/$mac -> delete session, ipset-entry missing";
+
+      my $error;
+      try { $self->delete_session_from_disk($ip); } catch { $error = $_ };
+
+      ERROR $error if $error;
+
+      next;    # session
+    }
+
+    ###########################################################
+    ###########################################################
+    # now start with the IDLE check for this active session
+    ###########################################################
+    ###########################################################
+
+    ###########################################################
+    # packets seen from this client during last purger period
+    # and not marked as idle candidate, skip to next session
+    ###########################################################
+
+    if (  ( exists $fw_activity->{$ip} )
+      and ( not $session->{IDLE_SINCE} ) )
+    {
+      next;    # session
+    }
+
+    ###########################################################
+    # packets seen from this client during last purger period
+    # but sometimes before marked as idle candidate, reset
+    # it to active
+    ###########################################################
+
+    if ( exists $fw_activity->{$ip} and $session->{IDLE_SINCE} ) {
+
+      INFO "$user/$ip/$mac -> withdraw idle candidate";
+
+      # update avtivity
+      $session->{IDLE_SINCE} = undef;
+
+      my $error;
+      try {
+        $self->write_session_handle( $lock_handle, $session );
+      }
+      catch { $error = $_ };
+      ERROR $error if $error;
+
+      next;    # session
+    }
+
+    ###########################################################
+    ###########################################################
+    # after that the client wasn't seen during purger period
+    ###########################################################
+    ###########################################################
+
+    ###########################################################
+    # max IDLE time reached?
+    ###########################################################
+
+    my $idle_since = $session->{IDLE_SINCE} || $this_run;
+
+    if ( $this_run - $idle_since >= $self->cfg->{IDLE_TIME} ) {
+
+      INFO "$user/$ip/$mac -> session is IDLE";
+
+      $session->{STATE}     = 'idle';
+      $session->{STOP_TIME} = $this_run;
+
+      my $error;
+      try {
+        $self->fw_stop_session($ip);
+        $self->write_session_handle( $lock_handle, $session );
+      }
+      catch { $error = $_ };
+      ERROR $error if $error;
+
+      next;    # session
+
+    }
+
+    ###########################################################
+    # IDLE_TIME not reached, trigger the client
+    # the first time it's an idle candidate
+    ###########################################################
+
+    unless ( defined $session->{IDLE_SINCE} ) {
+
+      INFO "$user/$ip/$mac -> idle candidate";
+
+      push @trigger_targets, $ip;
+
+      # mark as idle candidate
+      $session->{IDLE_SINCE} = $this_run;
+
+      my $error;
+      try {
+        $self->write_session_handle( $lock_handle, $session );
+      }
+      catch { $error = $_ };
+      ERROR $error if $error;
+
+      next;    # session
+    }
+
+  }    # session mainloop end
+
+  ###########################################################
+  # trigger idle clients not seen during last purger period
+  ###########################################################
+
+  $self->fw_trigger_clients(@trigger_targets);
+
+  ###########################################################
+  # Handle remaining ipset session entries with
+  # no corresponding session file. Be careful,
+  # maybe a race condition between purger and fcgi script
+  # was the reason for that inconsistency
+  ###########################################################
+
+  foreach my $ip ( keys %{$fw_sessions} ) {
+
+    # check if there is still no session file for that ipset entry
+    #
+    my ( $lock_handle, $error );
+    try {
+
+      # get the EXCL lock for the session
+      # hold this lock until next loop iteration
+      #
+      $lock_handle = $self->get_session_lock_handle(
+        key      => $ip,
+        blocking => 1,
+        shared   => 0,
+        timeout  => 50_000,    # 50_000 us -> 50ms
+      );
+
+    }
+    catch { $error = $_ };
+
+    if ($error) {
+      WARN $error;
+      next;
+    }
+
+    my $session = $self->read_session_handle($lock_handle);
+
+    # skip, now we have a valid session for this ipset session entry
+    next if $session;
+
+    # Still no session for this ipset session entry, but
+    # we have the lock, now we can check if the ipset entry
+    # is still set
+
+    next unless defined $self->fw_list_sessions->{$ip};
+
+    WARN "$ip -> delete ipset entry without session file";
+
+    undef $error;
+    try { $self->fw_stop_session($ip) } catch { $error = $_ };
+    ERROR $error if $error;
+
+    next;
+  }
 }
 
 # ATTENTION
@@ -773,49 +815,49 @@ sub fw_purge_sessions {
 #
 
 $_fw_install_rules = sub {
-    my $self = shift;
-    my $step = shift
-      or LOGDIE "missing param 'step'";
+  my $self = shift;
+  my $step = shift
+    or LOGDIE "missing param 'step'";
 
-    my $cmds;
-    my $template = "firewall/${step}.tt";
-    my $tmpl_vars =
-      { %{ $self->cfg->{IPTABLES} }, ipv4_aton => $self->can('ipv4_aton'), };
+  my $cmds;
+  my $template = "firewall/${step}.tt";
+  my $tmpl_vars =
+    { %{ $self->cfg->{IPTABLES} }, ipv4_aton => $self->can('ipv4_aton'), };
 
-    DEBUG "get the firewall $step commands via template $template";
+  DEBUG "get the firewall $step commands via template $template";
 
-    $self->{template}->process( $template, $tmpl_vars, \$cmds )
-      or LOGDIE( $self->{template}->error . "\n" );
+  $self->{template}->process( $template, $tmpl_vars, \$cmds )
+    or LOGDIE( $self->{template}->error . "\n" );
 
-    ##############################################
-    # mangle the command lines
-    #
+  ##############################################
+  # mangle the command lines
+  #
 
-    # remove comment lines
-    $cmds =~ s/^ \s* \# .* $ \n//xmg;
+  # remove comment lines
+  $cmds =~ s/^ \s* \# .* $ \n//xmg;
 
-    # remove empty lines
-    $cmds =~ s/^ \s* $ \n//xmg;
+  # remove empty lines
+  $cmds =~ s/^ \s* $ \n//xmg;
 
-    # concat continuation lines
-    $cmds =~ s/\\ \s* $ \n \s*/ /xmg;
+  # concat continuation lines
+  $cmds =~ s/\\ \s* $ \n \s*/ /xmg;
 
-    # remove leading whitespace
-    $cmds =~ s/^ \s* //xmg;
+  # remove leading whitespace
+  $cmds =~ s/^ \s* //xmg;
 
-    my @cmds = split( /\n/, $cmds );
+  my @cmds = split( /\n/, $cmds );
 
-    #
-    #################################################
+  #
+  #################################################
 
-    foreach my $cmd (@cmds) {
-        my @cmd = split( /\s+/, $cmd );
+  foreach my $cmd (@cmds) {
+    my @cmd = split( /\s+/, $cmd );
 
-        my $error;
-        try { $self->run_cmd(@cmd) } catch { $error = $_ };
+    my $error;
+    try { $self->run_cmd(@cmd) } catch { $error = $_ };
 
-        die $error if $error;
-    }
+    die $error if $error;
+  }
 };
 
 1;
@@ -840,4 +882,4 @@ b) the Artistic License version 2.0.
 
 =cut
 
-# vim: sw=4
+# vim: sw=2

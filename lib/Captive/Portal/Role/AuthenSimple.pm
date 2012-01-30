@@ -9,7 +9,7 @@ Captive::Portal::Role::AuthenSimple - Authen::Simple adapter for Captive::Portal
 
 =cut
 
-our $VERSION = '3.01';
+our $VERSION = '3.11';
 
 use Log::Log4perl qw(:easy);
 use Authen::Simple qw();
@@ -80,8 +80,14 @@ Call the authenticator object with credentials. Returns true on success and fals
 sub authenticate {
     my $self = shift;
 
+    my $username = $_[0];
+
+    DEBUG("try to authenticate user $username");
+
     if ( $self->cfg->{MOCK_AUTHEN} ) {
-        my $username = shift;
+
+	DEBUG("mock authentication for user $username");
+
         return 1 if $username =~ m/^(mock|fake|foo|bar|baz)/i;
         return;
     }

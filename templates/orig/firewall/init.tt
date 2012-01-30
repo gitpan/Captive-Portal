@@ -6,7 +6,14 @@
 # chain to mark authenticated traffic, clients get dynamically inserted/removed
 # first rule always checks if already MARKed
 #-----------------------------------------------------------------------------------------
-sudo ipset create capo_sessions_ipset bitmap:ip,mac range [%- capture_net %] 
+
+[% UNLESS ipset_version; THROW 'ipset_version undefined in config_hash'; END %]
+
+[% IF ipset_version >= 4 %]
+  sudo ipset --create capo_sessions_ipset bitmap:ip,mac range [%- capture_net %] 
+[% ELSE %]
+  sudo ipset --create capo_sessions_ipset macipmap network [%- capture_net %] 
+[% END %]
 
 sudo iptables -t mangle -N capo_sessions
 
@@ -16,8 +23,13 @@ sudo iptables -t mangle -A capo_sessions -m set --match-set capo_sessions_ipset 
 #-----------------------------------------------------------------------------------------
 # chain to register all outgoing traffic with ip/mac for IDLE checks by purger
 #-----------------------------------------------------------------------------------------
-sudo ipset create capo_activity_ipset      bitmap:ip,mac range [%- capture_net %] 
-sudo ipset create capo_activity_swap_ipset bitmap:ip,mac range [%- capture_net %] 
+[% IF ipset_version >= 4 %]
+  sudo ipset --create capo_activity_ipset      bitmap:ip,mac range [%- capture_net %] 
+  sudo ipset --create capo_activity_swap_ipset bitmap:ip,mac range [%- capture_net %] 
+[% ELSE %]
+  sudo ipset --create capo_activity_ipset      macipmap network [%- capture_net %] 
+  sudo ipset --create capo_activity_swap_ipset macipmap network [%- capture_net %] 
+[% END %]
 
 sudo iptables -t mangle -N capo_activity
 
@@ -71,7 +83,11 @@ sudo iptables -t mangle -N capo_open_clients
 # allow defined open networks
 #-------------------------------------------------------------------------------------------
 
-sudo ipset create capo_open_map_ipset hash:net
+[% IF ipset_version >= 4 %]
+  sudo ipset --create capo_open_map_ipset hash:net
+[% ELSE %]
+  sudo ipset --create capo_open_map_ipset iptreemap
+[% END %]
 
 sudo iptables -t mangle -N capo_open_map
 sudo iptables -t mangle -A capo_open_map -m set --match-set capo_open_map_ipset dst -j MARK --set-mark 1
@@ -79,7 +95,7 @@ sudo iptables -t mangle -A capo_open_map -m set --match-set capo_open_map_ipset 
 [% UNLESS open_networks; THROW 'open_networks undefined in config_file'; END %]
 
 [% FOREACH network IN open_networks %]
-  sudo ipset add capo_open_map_ipset [%- network -%]
+  sudo ipset --add capo_open_map_ipset [%- network -%]
 [% END %]
 
 #-------------------------------------------------------------------------------------------
@@ -90,7 +106,7 @@ sudo iptables -t mangle -A capo_open_map -m set --match-set capo_open_map_ipset 
 
 [% FOREACH server IN ipv4_aton(open_servers) %]
 
-  sudo ipset add capo_open_map_ipset [%- server -%]
+  sudo ipset --add capo_open_map_ipset [%- server -%]
 
 [% END %]
 

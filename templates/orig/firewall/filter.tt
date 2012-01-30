@@ -41,12 +41,16 @@ sudo iptables -t filter -A INPUT -i lo -j ACCEPT
 # don't throttle already established connections, helps also with http keep-alives
 sudo iptables -t filter -A INPUT -p tcp ! --syn -j ACCEPT
 
+#
+# ATTENTION: if enabled this will fill you kernel log ring buffer
+# use it just for debugging
+#
 # LOG targets which get dropped by the next rule
-sudo iptables -t filter -A INPUT -p tcp --syn \
-    -m multiport --dports [%- throttle_ports.join(',') -%] \
-    -m recent --name capo_throttle --rcheck \
-    --seconds [%- throttle_seconds -%] --hitcount [%- throttle_hitcount -%] \
-    -m limit --limit 4/minute -j LOG --log-prefix CAPO_THROTTLE:
+#sudo iptables -t filter -A INPUT -p tcp --syn \
+#    -m multiport --dports [%- throttle_ports.join(',') -%] \
+#    -m recent --name capo_throttle --rcheck \
+#    --seconds [%- throttle_seconds -%] --hitcount [%- throttle_hitcount -%] \
+#    -m limit --limit 4/minute -j LOG --log-prefix CAPO_THROTTLE:
 
 # throttle/drop new connections
 sudo iptables -t filter -A INPUT -p tcp --syn \

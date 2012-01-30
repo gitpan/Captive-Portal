@@ -14,13 +14,14 @@ Config file parser and storage for cfg hash. The configuration syntax is perl.
 
 =cut
 
-our $VERSION = '3.01';
+our $VERSION = '3.11';
 
 use Log::Log4perl qw(:easy);
 use FindBin qw($Bin);
 use File::Spec::Functions qw(splitdir rootdir catfile catdir);
 
 use Role::Basic;
+requires qw(fw_ipset_version);
 
 # just bin/../ => bin
 my @bin_parts = splitdir($Bin);
@@ -258,7 +259,7 @@ sub parse_cfg_file {
 
 =item $capo->cfg()
 
-Getter, return a copy of the config hashref.
+Getter, return a shallow copy of the config hashref.
 
 =cut
 
@@ -270,11 +271,16 @@ sub cfg { return {%$cfg_hash}; }
 #
 
 $_priv_post_defaults = sub {
+    my $self     = shift;
 
     # defined as anonymous sub,
     # else Role::Basic would export this as role, sigh!
 
     DEBUG "add post_parse config default values, if needed";
+
+    unless ( exists $cfg_hash->{IPTABLES}{ipset_version} ) {
+        $cfg_hash->{IPTABLES}{ipset_version} = $self->fw_ipset_version();
+    }
 
     unless ( exists $cfg_hash->{LOCK_FILE} ) {
         $cfg_hash->{LOCK_FILE} =

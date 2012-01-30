@@ -3,7 +3,7 @@ package Captive::Portal;
 use strict;
 use warnings;
 
-our $VERSION = '3.01';
+our $VERSION = '3.11';
 
 =head1 NAME
 
@@ -60,13 +60,13 @@ The HTTP-server redirects the HTTP-request by a rewrite rule to an HTTPS-request
 
 The I<capo.fcgi> script, fired due to this redirected request, offers a splash/login page. After successful login the firewall is dynamically changed to allow this clients IP/MAC tuple for internet access by ipset(8):
 
-    ipset add capo_sessions_ipset CLIENT_IP,CLIENT_MAC
+    ipset --add capo_sessions_ipset CLIENT_IP,CLIENT_MAC
 
 =item 5.  SESSION LOGOUT
 
 The capo.fcgi script offers a status/logout page. After successful logout the firewall is dynamically changed to disallow this IP/MAC tuple for internet access.
 
-    ipset del capo_sessions_ipset CLIENT_IP
+    ipset --del capo_sessions_ipset CLIENT_IP
 
 =item 6. SESSION IDLE
 
@@ -234,8 +234,6 @@ sub run {
         $self->{CTX}{TMPL_VARS} = {};
         $self->{CTX}{TMPL_VARS}{version} = $VERSION;
 
-        $self->{CTX}{FW_STATUS} = $self->fw_status;
-
 	########
 	# start the dispatcher for this request
 	#
@@ -326,12 +324,6 @@ sub dispatch {
     ###############################################################
 
     #############
-    # stop client request if firewall rules aren't loaded
-    LOGDIE "Firewall rules for Captive::Portal not loaded, "
-      . "please inform the administrators.\n"
-      unless defined $self->{CTX}{FW_STATUS};
-
-    #############
     # stop client request if client MAC isn't available
     # perhaps coming from wrong interface
 
@@ -417,6 +409,12 @@ sub idle_view {
     my $self = shift;
 
     DEBUG('running IDLE reactivation handler ...');
+
+    #############
+    # stop client request if firewall rules aren't loaded
+    LOGDIE "Firewall rules for Captive::Portal not loaded, "
+      . "please inform the administrators.\n"
+      unless defined $self->fw_status;
 
     # this requests parameters are in the context slot
     my $query   = $self->{CTX}{QUERY};
@@ -544,6 +542,14 @@ sub login {
         return $self->splash_view;
     }
 
+    DEBUG("login OK for '$username'");
+
+    #############
+    # stop client request if firewall rules aren't loaded
+    LOGDIE "Firewall rules for Captive::Portal not loaded, "
+      . "please inform the administrators.\n"
+      unless defined $self->fw_status;
+
     $session->{STATE}      = 'active';
     $session->{START_TIME} = time();
     $session->{STOP_TIME}  = '';
@@ -596,6 +602,12 @@ sub logout {
         $self->{CTX}{HEADER} = $query->redirect( $query->url );
         return;
     }
+
+    #############
+    # stop client request if firewall rules aren't loaded
+    LOGDIE "Firewall rules for Captive::Portal not loaded, "
+      . "please inform the administrators.\n"
+      unless defined $self->fw_status;
 
     $session->{STATE}     = 'logout';
     $session->{STOP_TIME} = time();
@@ -694,7 +706,7 @@ sub summary_status_view {
     }
 
     $self->{CTX}{TMPL_VARS}{stopped}++
-      unless defined $self->{CTX}{FW_STATUS};
+      unless defined $self->fw_status;
 
     $self->{CTX}{TMPL_VARS}{query}   = $query;
     $self->{CTX}{TMPL_VARS}{summary} = $summary;
@@ -830,7 +842,7 @@ sub detail_status_view {
     }
 
     $self->{CTX}{TMPL_VARS}{stopped}++
-      unless defined $self->{CTX}{FW_STATUS};
+      unless defined $self->fw_status;
 
     $self->{CTX}{TMPL_VARS}{query}    = $query;
     $self->{CTX}{TMPL_VARS}{summary}  = $summary;
@@ -874,9 +886,11 @@ sub is_running_view {
     $self->{CTX}{HEADER} =
       $query->header( -type => 'text/plain', -charset => 'UTF-8' );
 
-    if ( defined $self->{CTX}{FW_STATUS} ) {
+    my $session_count = $self->fw_status;
+
+    if ( defined $session_count ) {
         $self->{CTX}{BODY} =
-          "RUNNING $self->{CTX}{FW_STATUS} active sessions";
+          "RUNNING $session_count active sessions";
     }
     else {
         $self->{CTX}{BODY} = "STOPPED";

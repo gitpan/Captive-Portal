@@ -9,7 +9,7 @@ Captive::Portal::Role::Utils - common utils for Captive::Portal
 
 =cut
 
-our $VERSION = '3.01';
+our $VERSION = '3.11';
 
 use Log::Log4perl qw(:easy);
 use Capture::Tiny qw(capture);
@@ -221,7 +221,7 @@ If the external command doesn't return after I<timeout>, the command is interrup
 
 Exit codes != 0 and not defined in I<ignore_exit_codes> throw exceptions.
 
-Remark: Can't use other CPAN modules to run external commands and capture stdout and stderr due to the buggy tie implementation of FCGI.
+Remark: Can't use other CPAN modules to run external commands and capture stdout and stderr due to the buggy filehandle tie() of FCGI.
 
 =cut
 
@@ -243,33 +243,35 @@ sub run_cmd {
     my $timeout           = $options->{timeout};
     my $ignore_exit_codes = $options->{ignore_exit_codes};
 
-    DEBUG("try to run: @cmd");
+    # be sure SIGCHLD isn't 'IGNORE'd
+    #
+    local $SIG{CHLD} = 'DEFAULT';
+
     my ( $old_alarm, $error, $stdout, $stderr );
     try {
 
-        # get rid of the 'No child processes', see perldoc perlipc
-        local $SIG{CHLD} = 'DEFAULT';
-
-        local $SIG{ALRM} = sub { die "timeout running cmd: '@cmd'," };
-
-        ###############################
         # get rid of some Capture::Tiny limitations with FCGI
-        # the problem is the buggy FCGI tie implementation for filehandles
-
+        # the problem is the buggy FCGI filehandle tie().
+        #
         local *STDIN;
         local *STDOUT;
         local *STDERR;
 
-        open( STDIN,  '<&=0' );
-        open( STDOUT, '>>&=1' );
-        open( STDERR, '>>&=2' );
+        open( STDIN,  '<&=0' )  or die $!;
+        open( STDOUT, '>>&=1' ) or die $!;
+        open( STDERR, '>>&=2' ) or die $!;
 
-        #
         ###############################
 
         # start/stop watchdog around system()
+        #
+        local $SIG{ALRM} = sub { die "timeout running cmd: '@cmd'," };
+
+        DEBUG("try to run: @cmd");
+
         $old_alarm = ualarm $timeout || 0;
         ( $stdout, $stderr ) = capture { system(@cmd) };
+        DEBUG("end of run: @cmd");
 
         #################################
         # normalize exit code, see perldoc -f system
@@ -294,12 +296,12 @@ sub run_cmd {
               unless grep { $exit_code == $_ } @$ignore_exit_codes;
         }
 
-        # restart old alarm
+        # restart old alarm in case of NO error
         ualarm $old_alarm;
     }
     catch {    # catched an exception in try {}
 
-        # restart old alarm
+        # restart old alarm in case of error
         ualarm $old_alarm;
 
         # propagate exception
@@ -325,7 +327,8 @@ Example:
 
 sub ipv4_aton {
     my @hosts = @_
-      or die Template::Exception->new( 'ipv4_aton', "missing param 'hosts'\n" );
+      or
+      die Template::Exception->new( 'ipv4_aton', "missing param 'hosts'\n" );
 
     # explode array refs
     my @host_list;

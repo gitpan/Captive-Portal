@@ -17,6 +17,6 @@ sudo iptables -t mangle -X
 ######################################
 # delete all ipset sets
 ######################################
-sudo ipset destroy
+sudo ipset --destroy
 
 # vim: sw=2 ft=sh

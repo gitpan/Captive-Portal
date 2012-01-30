@@ -1,7 +1,86 @@
 Revision history for Captive::Portal
 
+3.11    Mon, 30 Jan 2012 09:23:34 +0100
+	* fixed typo in cfg slot for ipset_version
+
+3.10    Sun, 29 Jan 2012 15:39:34 +0100
+	* merged version 2 and version 3 again together
+	* reap zombies in capo.fcgi after each HTTP request
+
+3.03    Thu, 26 Jan 2012 10:50:13 +0100
+	* more DEBUG in authentication
+	* LOG in filter.tt firewall template removed
+	* mangled searchpath for ipset
+
+3.02    Wed, 25 Jan 2012 17:50:14 +0100
+	* call fw_status less often
+
 3.01    Mon, 23 Jan 2012 11:15:42 +0100
 	* rewrite for newer ipset versions greater 5.x
 	* add hint for version mismatch in INSTALL file
 	* fix pod2usage due to $0 hack
 	* use Captive::Portal Version 2.x line for ipset < version 5.x
+
+2.28    Fri, 20 Jan 2012 11:02:07 +0100
+	* fixed pod2usage error in capo-ctl.pl
+
+2.27    Thu, 19 Jan 2012 21:33:25 +0100
+	* hint for ipset/capo version mismatch in INSTALL file
+
+2.26    Thu, 19 Jan 2012 11:06:13 +0100
+	* arrgh, ipset API changed, check for ipset major version > 4 in Build.PL
+	* fixed minor POD typos
+
+2.25    Mon, 07 Nov 2011 10:13:15 +0100
+	* fixed again POD typos
+	* added script_files in Build.pl
+	* put scriptname for capo-ctl.pl in process table
+
+2.24    Fri, 04 Nov 2011 10:23:05 +0100
+	* fixed POD error in capo-ctl.pl
+
+2.23    Wed, 02 Nov 2011 11:03:51 +0100
+	* again more locking tweaks in handling old, idle sessions
+
+2.22    Mon, 31 Oct 2011 11:09:42 +0100
+	* still more timing tweaks in deleting old, idle sessions
+
+2.21    Sat, 29 Oct 2011 19:57:44 +0200
+	* more small tweaks in deleting old, idle sessions
+
+2.20    Fri, 28 Oct 2011 15:34:43 +0200
+	* solved race condition in deleting old, idle sessions
+
+2.19	Tue, 25 Oct 2011 09:48:12 +0200
+	* removed unneeded modules for locking from Captive::Portal::Role::Utils
+
+2.18	Tue, 25 Oct 2011 09:36:23 +0200
+	* OS hint in Build.pl for CPAN testers
+        * fixed POD error in Captive::Portal::LockHandle
+
+2.17	Wed, 12 Oct 2011 15:14:56 +0200
+	* use Captive::Portal::LockHandle as Class, no longer MIXIN get_lock_handle()
+
+2.16	Fri, 07 Oct 2011 09:52:45 +0200
+	* changed locking from being a role to a class for DESTROY() handling
+	* documentation improvements
+	* test improvements
+
+2.15	Thu, 06 Oct 2011 12:12:00 +0200
+	* capo.fcgi: put scriptname in process table
+
+2.14	Thu Oct 6 10:52:42 2011 +0200
+	* fixed minor documentation bugs
+
+2.13	Wed Oct 5 17:55:07 2011 +0200
+	* minor bug, Scalar::Util in role I18N missing
+
+2.12	Tue Sep 27 10:15:16 2011 +0200
+	* more documentation fixes
+
+2.11	Mon Sep 26 14:36:49 2011 +0200
+	* fixed minor documentation bugs
+
+2.10	Fri Sep 23 16:23:17 2011 +0200
+	* initial CPAN release, already in production for months
+
