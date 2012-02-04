@@ -9,12 +9,11 @@ Captive::Portal::Role::Utils - common utils for Captive::Portal
 
 =cut
 
-our $VERSION = '3.11';
+our $VERSION = '3.13';
 
 use Log::Log4perl qw(:easy);
-use Capture::Tiny qw(capture);
+use Spawn::Safe qw(spawn_safe);
 use Try::Tiny;
-use Time::HiRes qw(usleep ualarm);
 use Socket qw(inet_ntoa);
 use Net::hostent;
 use Template::Exception;
@@ -206,53 +205,47 @@ sub drop_privileges {
 
 }
 
-=item $capo->run_cmd(@cmd_with_options, [$run_cmd_options])
+=item $capo->spawn_cmd(@cmd_with_options, [$spawn_cmd_options])
 
 Wrapper to run external commands, capture and return (stdout/stderr).
 
-Last optional parameter item is a hashref with options for run_cmd itself:
+Last optional parameter item is a hashref with options for spawn_cmd itself:
 
     {
-        timeout           => 500_000,    # default 500_000us,
-        ignore_exit_codes => [],         # exit codes without exception
+        timeout           => 2,    # default 2s
+        ignore_exit_codes => [],   # exit codes without exception
     }
 
 If the external command doesn't return after I<timeout>, the command is interrupted and an exception is thrown.
 
 Exit codes != 0 and not defined in I<ignore_exit_codes> throw exceptions.
 
-Remark: Can't use other CPAN modules to run external commands and capture stdout and stderr due to the buggy filehandle tie() of FCGI.
-
 =cut
 
-sub run_cmd {
+sub spawn_cmd {
     my $self = shift;
-    my @cmd  = @_;
-    LOGDIE "Paramter missing," unless scalar @cmd;
+    my @argv = @_;
+    LOGDIE "Paramter missing," unless scalar @argv;
 
+    # defaults
     my $options = {
-        timeout           => 500_000,    # 0.5s
+        timeout           => 2,    # at least 2s !
         ignore_exit_codes => [],
     };
 
     # options from caller override defaults
-    if ( ref $cmd[-1] eq 'HASH' ) {
-        $options = { %$options, %{ pop @cmd } };
+    if ( ref $argv[-1] eq 'HASH' ) {
+        $options = { %$options, %{ pop @argv } };
     }
 
-    my $timeout           = $options->{timeout};
-    my $ignore_exit_codes = $options->{ignore_exit_codes};
+    my $results;
 
-    # be sure SIGCHLD isn't 'IGNORE'd
-    #
-    local $SIG{CHLD} = 'DEFAULT';
+    DEBUG("try to spawn: @argv");
+    {
+        ####
+        # get rid of some limitations with FCGI
+        # ERROR: "Not a GLOB reference at .../FCGI.pm line 125"
 
-    my ( $old_alarm, $error, $stdout, $stderr );
-    try {
-
-        # get rid of some Capture::Tiny limitations with FCGI
-        # the problem is the buggy FCGI filehandle tie().
-        #
         local *STDIN;
         local *STDOUT;
         local *STDERR;
@@ -261,54 +254,45 @@ sub run_cmd {
         open( STDOUT, '>>&=1' ) or die $!;
         open( STDERR, '>>&=2' ) or die $!;
 
-        ###############################
-
-        # start/stop watchdog around system()
         #
-        local $SIG{ALRM} = sub { die "timeout running cmd: '@cmd'," };
-
-        DEBUG("try to run: @cmd");
-
-        $old_alarm = ualarm $timeout || 0;
-        ( $stdout, $stderr ) = capture { system(@cmd) };
-        DEBUG("end of run: @cmd");
-
-        #################################
-        # normalize exit code, see perldoc -f system
-        my $exit_code = $?;
-
-        if ( $exit_code == -1 ) {
-            die $! || $stderr;
-        }
-        elsif ( $exit_code & 127 ) {
-            die 'child died with signal ' . ( $exit_code & 127 );
-        }
-        else {
-            $exit_code = $exit_code >> 8;
-        }
-
-        #
-        #################################
-
-        # something went wrong with system, shall we ignore it
-        if ( $exit_code != 0 ) {
-            die( $! || $stderr )
-              unless grep { $exit_code == $_ } @$ignore_exit_codes;
-        }
-
-        # restart old alarm in case of NO error
-        ualarm $old_alarm;
+        $results = spawn_safe(
+            {
+                argv    => [@argv],
+                timeout => $options->{timeout},
+            }
+        );
     }
-    catch {    # catched an exception in try {}
+    DEBUG("end of spawn: @argv");
 
-        # restart old alarm in case of error
-        ualarm $old_alarm;
+    #################################
 
-        # propagate exception
-        $error = $_;
-    };
+    my $exit_code = $results->{exit_code} || 0;
+    my $error     = $results->{error}     || '';
+    my $stdout    = $results->{stdout}    || '';
+    my $stderr    = $results->{stderr}    || '';
 
-    die $error if $error;
+    if ($error) {
+        DEBUG "ERROR in spawning command: @argv";
+        DEBUG "... error: $error";
+        DEBUG "... exit_code: $exit_code";
+        DEBUG "... stdout: $stdout";
+        DEBUG "... stderr: $stderr";
+
+        die "'$error' in spawning @argv\n";
+    }
+
+    # something went wrong with exec, shall we ignore it
+    if ( $exit_code != 0 ) {
+
+        die "'$stderr' in spawning @argv\n"
+          unless grep { $exit_code == $_ } @{ $options->{ignore_exit_codes} };
+
+        DEBUG "ignored EXIT_CODE !=0 in spawning command: @argv";
+        DEBUG "... error: $error";
+        DEBUG "... exit_code: $exit_code";
+        DEBUG "... stdout: $stdout";
+        DEBUG "... stderr: $stderr";
+    }
 
     return ( $stdout, $stderr );
 }

@@ -91,7 +91,7 @@ my $builder = $my_capo_class->new(
         'Scalar::Util'   => 0,
         'Time::HiRes'    => 0,
         'Try::Tiny'      => 0,
-        'Capture::Tiny'  => 0,
+        'Spawn::Safe'    => 0,
 
         'Log::Log4perl'         => 0,
         'Log::Dispatch::Syslog' => 0,

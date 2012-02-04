@@ -14,31 +14,31 @@ name: Captive-Portal
 provides:
   Captive::Portal:
     file: lib/Captive/Portal.pm
-    version: 3.11
+    version: 3.13
   Captive::Portal::LockHandle:
     file: lib/Captive/Portal/LockHandle.pm
-    version: 3.11
+    version: 3.13
   Captive::Portal::Role::AuthenSimple:
     file: lib/Captive/Portal/Role/AuthenSimple.pm
-    version: 3.11
+    version: 3.13
   Captive::Portal::Role::Config:
     file: lib/Captive/Portal/Role/Config.pm
-    version: 3.11
+    version: 3.13
   Captive::Portal::Role::Firewall:
     file: lib/Captive/Portal/Role/Firewall.pm
-    version: 3.11
+    version: 3.13
   Captive::Portal::Role::I18N:
     file: lib/Captive/Portal/Role/I18N.pm
-    version: 3.11
+    version: 3.13
   Captive::Portal::Role::Session:
     file: lib/Captive/Portal/Role/Session.pm
-    version: 3.11
+    version: 3.13
   Captive::Portal::Role::Utils:
     file: lib/Captive/Portal/Role/Utils.pm
-    version: 3.11
+    version: 3.13
   Captive::Portal::TestServer:
     file: lib/Captive/Portal/TestServer.pm
-    version: 3.11
+    version: 3.13
 recommends:
   Authen::Simple::RADIUS: 0
   HTTP::Server::Simple::CGI: 0
@@ -48,16 +48,16 @@ requires:
   Authen::Simple: 0
   CGI::Cookie: 0
   CGI::Fast: 0
-  Capture::Tiny: 0
   JSON: 0
   Log::Dispatch::Syslog: 0
   Log::Log4perl: 0
   Role::Basic: 0
   Scalar::Util: 0
+  Spawn::Safe: 0
   Template: 0
   Time::HiRes: 0
   Try::Tiny: 0
   parent: 0
 resources:
   license: http://dev.perl.org/licenses/
-version: 3.11
+version: 3.13

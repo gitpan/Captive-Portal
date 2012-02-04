@@ -23,6 +23,7 @@ BEGIN {
 }
 
 # enable this code fragment to get DEBUG logging for this tests
+
 =pod
 
 my $log4perl_conf = <<EO_CONF;

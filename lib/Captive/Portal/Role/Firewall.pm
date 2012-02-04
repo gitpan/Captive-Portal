@@ -13,7 +13,7 @@ Does all stuff needed to dynamically update iptables and ipset.
 
 =cut
 
-our $VERSION = '3.11';
+our $VERSION = '3.13';
 
 use Log::Log4perl qw(:easy);
 use Try::Tiny;
@@ -21,7 +21,7 @@ use Try::Tiny;
 use Role::Basic;
 requires qw(
   cfg
-  run_cmd
+  spawn_cmd
   list_sessions_from_disk
   get_session_lock_handle
   read_session_handle
@@ -50,7 +50,7 @@ sub fw_trigger_clients {
   return unless @ips2ping;
 
   unless ( $self->cfg->{USE_FPING} ) {
-    INFO "USE_FPING OFF in config, don't trigger targets";
+    DEBUG "USE_FPING OFF in config, don't trigger targets";
     return;
   }
 
@@ -59,18 +59,18 @@ sub fw_trigger_clients {
     @{ $self->cfg->{FPING_OPTIONS} },
     @ips2ping,
     {
-      timeout           => 2_000_000,
+      timeout           => 2,
       ignore_exit_codes => [ 1, ],
     },
   );
 
-  INFO "fping, trigger @ips2ping";
+  DEBUG "fping, trigger @ips2ping";
 
   my $error;
-  try { $self->run_cmd(@cmd) } catch { $error = $_ };
+  try { $self->spawn_cmd(@cmd) } catch { $error = $_ };
 
   # ignore fping timeouts
-  if ( $error && $error !~ m/timeout/i ) {
+  if ( $error && $error !~ m/timed out/i ) {
     ERROR $error;
   }
 }
@@ -89,10 +89,10 @@ sub fw_ipset_version {
     return 4;
   }
 
-  my @cmd = ( 'sudo', 'ipset', '--version' );
+  my @cmd = qw(sudo ipset --version);
 
   my ( $stdout, $error );
-  try { ($stdout) = $self->run_cmd(@cmd) } catch { $error = $_ };
+  try { ($stdout) = $self->spawn_cmd(@cmd) } catch { $error = $_ };
 
   LOGDIE $error if $error;
 
@@ -124,7 +124,7 @@ sub fw_start_session {
   my @cmd = ( 'sudo', 'ipset', '--add', 'capo_sessions_ipset', "$ip,$mac" );
 
   my $error;
-  try { $self->run_cmd(@cmd) } catch { $error = $_ };
+  try { $self->spawn_cmd(@cmd) } catch { $error = $_ };
 
   die "$error\n" if $error;
 
@@ -151,7 +151,7 @@ sub fw_stop_session {
   my @cmd = ( 'sudo', 'ipset', '--del', 'capo_sessions_ipset', $ip, );
 
   my $error;
-  try { $self->run_cmd(@cmd) } catch { $error = $_ };
+  try { $self->spawn_cmd(@cmd) } catch { $error = $_ };
 
   die "$error\n" if $error;
 
@@ -251,10 +251,9 @@ sub fw_list_sessions {
   }
 
   my ( $stdout, $error );
-  try { ($stdout) = $self->run_cmd(@cmd) } catch { $error = $_ };
+  try { ($stdout) = $self->spawn_cmd(@cmd) } catch { $error = $_ };
 
-  ERROR $error if $error;
-  die $error   if $error;
+  LOGDIE $error if $error;
 
   my @lines = split "\n+", $stdout;
 
@@ -331,20 +330,20 @@ sub fw_list_activity {
 
   my ( $stdout, $error );
   try {
-    $self->run_cmd(qw(sudo ipset --flush capo_activity_swap_ipset));
+    $self->spawn_cmd(qw(sudo ipset --flush capo_activity_swap_ipset));
 
-    $self->run_cmd(
+    $self->spawn_cmd(
       qw(sudo ipset --swap capo_activity_ipset capo_activity_swap_ipset));
 
     # sigh, ipset() changed API after version >= 4
     #
     if ( $self->cfg->{IPTABLES}{ipset_version} >= 4 ) {
       ($stdout) =
-        $self->run_cmd(qw(sudo ipset --list capo_activity_swap_ipset));
+        $self->spawn_cmd(qw(sudo ipset --list capo_activity_swap_ipset));
     }
     else {
       ($stdout) =
-        $self->run_cmd(qw(sudo ipset -n --list capo_activity_swap_ipset));
+        $self->spawn_cmd(qw(sudo ipset -n --list capo_activity_swap_ipset));
     }
 
   }
@@ -352,7 +351,7 @@ sub fw_list_activity {
     $error = $_;
   };
 
-  die $error if $error;
+  LOGDIE $error if $error;
 
   my @lines = split "\n+", $stdout;
 
@@ -559,7 +558,7 @@ sub fw_purge_sessions {
       if ( $this_run - $session->{STOP_TIME} >
         $self->cfg->{KEEP_OLD_STATE_PERIOD} )
       {
-        INFO "$user/$ip/$mac" . ' -> delete old session from disk cache';
+        DEBUG "$user/$ip/$mac" . ' -> delete old session from disk cache';
 
         my $error;
         try { $self->delete_session_from_disk($ip) } catch { $error = $_ };
@@ -675,7 +674,7 @@ sub fw_purge_sessions {
 
     if ( exists $fw_activity->{$ip} and $session->{IDLE_SINCE} ) {
 
-      INFO "$user/$ip/$mac -> withdraw idle candidate";
+      DEBUG "$user/$ip/$mac -> withdraw idle candidate";
 
       # update avtivity
       $session->{IDLE_SINCE} = undef;
@@ -728,7 +727,7 @@ sub fw_purge_sessions {
 
     unless ( defined $session->{IDLE_SINCE} ) {
 
-      INFO "$user/$ip/$mac -> idle candidate";
+      DEBUG "$user/$ip/$mac -> idle candidate";
 
       push @trigger_targets, $ip;
 
@@ -811,7 +810,7 @@ sub fw_purge_sessions {
 #
 # $capo->$_fw_install_rules($template_name);
 #
-# Reads the template, sanitize it and call the commands in the template file via run_cmd
+# Reads the template, sanitize it and call the commands in the template file via spawn_cmd
 #
 
 $_fw_install_rules = sub {
@@ -854,7 +853,7 @@ $_fw_install_rules = sub {
     my @cmd = split( /\s+/, $cmd );
 
     my $error;
-    try { $self->run_cmd(@cmd) } catch { $error = $_ };
+    try { $self->spawn_cmd(@cmd) } catch { $error = $_ };
 
     die $error if $error;
   }

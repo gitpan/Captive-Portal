@@ -9,7 +9,7 @@ Captive::Portal::Role::Session - session methods for Captive::Portal
 
 =cut
 
-our $VERSION = '3.11';
+our $VERSION = '3.13';
 
 use Log::Log4perl qw(:easy);
 use JSON qw();
@@ -20,7 +20,7 @@ use Captive::Portal::LockHandle;
 use Role::Basic;
 requires qw(
   cfg
-  run_cmd
+  spawn_cmd
   normalize_ip
   find_mac
 );
@@ -175,7 +175,7 @@ sub open_sessions_dir {
 
         my $error;
         try {
-            $self->run_cmd(@cmd);
+            $self->spawn_cmd(@cmd);
         }
         catch {
             $error = $_;
