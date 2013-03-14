@@ -57,22 +57,21 @@ ALGORITHM IN SHORT
         dynamically changed to allow this clients IP/MAC tuple for internet
         access by ipset(8):
 
-            ipset --add capo_sessions_ipset CLIENT_IP,CLIENT_MAC
+            ipset add capo_sessions_ipset CLIENT_IP,CLIENT_MAC
 
     5. SESSION LOGOUT
         The capo.fcgi script offers a status/logout page. After successful
         logout the firewall is dynamically changed to disallow this IP/MAC
         tuple for internet access.
 
-            ipset --del capo_sessions_ipset CLIENT_IP
+            ipset del capo_sessions_ipset CLIENT_IP
 
     6. SESSION IDLE
         A cronjob fires periodically the capo-ctl.pl script checking for
-        idle sessions. Idle means, the client didn't send any packet for a
-        period of time (cfg param: IDLE_TIME = 10min). Before a session is
-        put into IDLE state the client is once pinged.
-
-        It is a design goal not requiring JavaScript on clients!
+        idle or malformed sessions. Idle means, the client didn't send any
+        packet for a period of time (cfg param: IDLE_TIME = 10min). Clients
+        sending packets are registered via iptables/ipset in the
+        capo_activity_ipset.
 
     7. COMFORTABLE SESSION REACTIVATION
         For a short period of time (cfg param: KEEP_OLD_STATE_PERIOD = 1h)
@@ -81,25 +80,7 @@ ALGORITHM IN SHORT
         data on disc, the session is reactivated without a login page.
 
 INSTALLATION
-    Please see the INSTALL file in this distribution. As a minimum please be
-    aware of the following access restrictions:
-
-    Captive::Portal needs access to iptables(8) and ipset(8) to change the
-    firewall-rules on request. You must add the following rule (or similar)
-    to the sudoers file, depending on the username of your http daemon:
-
-     WWW_USER ALL=NOPASSWD: /PATH/TO/iptables, /PATH/TO/ipset
-
-    If you use fping(8) (see USE_FPING config parameter) to trigger idle
-    sessions before going idle you must add fping to the sudoers file like
-    ipset and iptables, regardless of the suid bit on fping, since we need
-    special timing flags available only for root:
-
-     WWW_USER ALL=NOPASSWD: /PATH/TO/iptables, /PATH/TO/ipset, /PATH/TO/fping
-
-    The default $SESSIONS_DIR is set to '/var/cache/capo'.
-
-    WWW_USER must be the owner of this dir with write permissions!
+    Please see the INSTALL file in this distribution.
 
 CONFIGURATION
     The configuration file is searched in the following default places:
@@ -157,7 +138,7 @@ AUTHOR
     Karl Gaissmaier, "<gaissmai at cpan.org>"
 
 LICENSE AND COPYRIGHT
-    Copyright 2010-2012 Karl Gaissmaier, all rights reserved.
+    Copyright 2010-2013 Karl Gaissmaier, all rights reserved.
 
     This distribution is free software; you can redistribute it and/or
     modify it under the terms of either:

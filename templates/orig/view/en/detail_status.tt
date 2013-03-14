@@ -2,6 +2,8 @@
 
 <div class="span-4">
 
+ <p class="info">Current devices behind firewall: [% client_candidates %]</p>
+
  <table>
   <caption>Summary</caption>
   <thead>

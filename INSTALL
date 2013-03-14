@@ -22,30 +22,30 @@ NOTICE: files in directories named 'local' are not overridden, please
         The TEMPLATE search order is:
           $Bin/../templates/local/ -> $bin/../templates/orig/
 
-CONFIGURATION after INSTALLATION
+==================================
+ CONFIGURATION after INSTALLATION
+==================================
 
 - You must adjust the configuration file to your local situation!
-
-- Captive::Portal needs execute permissions for iptables(8) and ipset(8)
-  to set and change the firewall-rules:
-
-  You must add the following rule to the sudoers file, depending
-  on the username of the http daemon:
-
-    YOUR_WWW_USER ALL=NOPASSWD: /YOUR/PATH/TO/iptables, /YOUR/PATH/TO/ipset
-
-- If you use fping (see USE_FPING config parameter) to check idle sessions
-  before going idle you must add fping to the sudoers file like ipset and
-  iptables, regardless of the suid bit on fping, since we need special timing
-  flags available only for root:
-
-    WWW_USER ALL=NOPASSWD: /PATH/TO/iptables, /PATH/TO/ipset, /PATH/TO/fping
-
-- The default $SESSIONS_DIR is set to '/var/cache/capo'
-  You must create the $SESSIONS_DIR directory and
-  YOUR_WWW_USER must be the owner of this directory with write permissions!
 
 - Don't forget to change the secrets of the admin user and the shared
   secret for RADIUS authentication!
 
+- The default $SESSIONS_DIR is set to '/var/cache/capo'
+  You must create the $SESSIONS_DIR directory and YOUR_WWW_USER (e.g. "wwwrun")
+  must be the owner of this directory with write permissions!
+
+- Captive::Portal needs access to iptables and ipset to change the
+  firewall-rules on request.
+
+  In order to use ipset and iptables from the unprivileged "wwwrun" user,
+  we at ulm university add file capabilities to these executables.
+
+   setcap "CAP_NET_ADMIN+pe"                 /usr/sbin/ipset
+   setcap "CAP_NET_RAW+pe CAP_NET_ADMIN+pe"  /usr/sbin/iptables
+
+  in addition we allow execution only from the wwwrun user
+
+    chown wwwrun /usr/sbin/ipset /usr/sbin/iptables
+    chmod 500    /usr/sbin/ipset /usr/sbin/iptables 
 

@@ -9,7 +9,7 @@ Captive::Portal::Role::AuthenSimple - Authen::Simple adapter for Captive::Portal
 
 =cut
 
-our $VERSION = '3.13';
+our $VERSION = '4.09';
 
 use Log::Log4perl qw(:easy);
 use Authen::Simple qw();
@@ -109,7 +109,7 @@ Karl Gaissmaier, C<< <gaissmai at cpan.org> >>
 
 =head1 LICENSE AND COPYRIGHT
 
-Copyright 2010-2012 Karl Gaissmaier, all rights reserved.
+Copyright 2010-2013 Karl Gaissmaier, all rights reserved.
 
 This distribution is free software; you can redistribute it and/or modify it
 under the terms of either:

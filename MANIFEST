@@ -7,6 +7,8 @@ Changes
 etc/config.pl
 etc/local/README
 etc/log4perl.conf
+etc/test-cert.pem
+etc/test-priv-key.pem
 INSTALL
 lib/Captive/Portal.pm
 lib/Captive/Portal/LockHandle.pm
@@ -30,12 +32,15 @@ static/orig/css/blueprint/print.css
 static/orig/css/blueprint/screen.css
 static/orig/css/blueprint/src/grid.png
 static/orig/css/capo.css
+static/orig/js/jquery.js
+static/orig/js/splash.js
 t/001_base.t
 t/002_utils.t
 t/004_config.t
 t/005_locking.t
 t/006_sessions.t
 t/007_webapp.t
+t/008_templates.t
 t/101_pod.t
 t/102_pod-coverage.t
 t/etc/boilerplate.pl
@@ -62,3 +67,4 @@ templates/orig/view/en/layout.tt
 templates/orig/view/en/nomac.tt
 templates/orig/view/en/splash.tt
 templates/orig/view/en/summary_status.tt
+META.json

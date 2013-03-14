@@ -9,7 +9,7 @@ Captive::Portal::Role::Session - session methods for Captive::Portal
 
 =cut
 
-our $VERSION = '3.13';
+our $VERSION = '4.09';
 
 use Log::Log4perl qw(:easy);
 use JSON qw();
@@ -54,7 +54,6 @@ Example: active session
       "STATE"      : "active",
       "START_TIME" : 1317106093,
       "STOP_TIME"  : "",
-      "IDLE_SINCE" : null,
       "USERNAME"   : "foo",
       "IP"         : "134.60.239.90",
       "MAC"        : "F0:F4:69:17:89:DE",
@@ -391,7 +390,7 @@ sub mk_cookie {
         -name     => 'CaPo',
         -value    => $value,
         -httponly => 1,
-        $self->cfg->{SECURE_COOKIE} ? ( -secure => 1 ) : (),
+        $self->cfg->{SSL_REQUIRED} ? ( -secure => 1 ) : (),
     ) or LOGDIE "Couldn't create cookie\n";
 
     return $cookie;
@@ -434,7 +433,7 @@ Karl Gaissmaier, C<< <gaissmai at cpan.org> >>
 
 =head1 LICENSE AND COPYRIGHT
 
-Copyright 2010-2012 Karl Gaissmaier, all rights reserved.
+Copyright 2010-2013 Karl Gaissmaier, all rights reserved.
 
 This distribution is free software; you can redistribute it and/or modify it
 under the terms of either:

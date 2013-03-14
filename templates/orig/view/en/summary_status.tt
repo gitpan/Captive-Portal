@@ -28,6 +28,8 @@
   <p class="error">The Captive::Portal firewall is stopped!</p>
  [% END %]
 
+ <p class="info">Current devices behind firewall: [% client_candidates %]</p>
+
  <table>
    <caption>Summary</caption>
   <thead>

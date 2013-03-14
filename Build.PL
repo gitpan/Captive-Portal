@@ -108,7 +108,7 @@ my $builder = $my_capo_class->new(
 
     configure_requires => { 'Module::Build' => 0, },
 
-    add_to_cleanup => [ 'Captive-Portal-*', 't/sessions' ],
+    add_to_cleanup => [ 'README', 'Captive-Portal-*', 't/sessions' ],
 );
 
 # what web-app dirs must be installed
@@ -118,8 +118,8 @@ $builder->create_build_script();
 # -----------------------------------------------------------------------
 
 $builder->notes( test_radius_modules => 1 )
-  if $builder->y_n( 'Shall we test the availabilty of RADIUS modules?',
-    'no' );
+  if $builder->prompt( 'Shall we test availabilty of RADIUS modules?', 'no' )
+  =~ m/^y(es)?$/i;
 
 $builder->log_info( <<EOWARN );
 

@@ -14,14 +14,13 @@ Config file parser and storage for cfg hash. The configuration syntax is perl.
 
 =cut
 
-our $VERSION = '3.13';
+our $VERSION = '4.09';
 
 use Log::Log4perl qw(:easy);
 use FindBin qw($Bin);
 use File::Spec::Functions qw(splitdir rootdir catfile catdir);
 
 use Role::Basic;
-requires qw(fw_ipset_version);
 
 # just bin/../ => bin
 my @bin_parts = splitdir($Bin);
@@ -76,9 +75,9 @@ Drop privileges to RUN_GROUP.
 
 Where to store the session files. This directory must exist und must be readable/writeable by RUN_USER.
 
-=item SECURE_COOKIE => ON
+=item SSL_REQUIRED => ON
 
-If this attribute is set, the cookie will only be sent to your script if the CGI request is occurring on a secure channel, such as SSL.
+A JS script looks for SSL encryption of the login/splash page and throws an error when not. Maybe a man-in-the-middle plays http-https proxy like sslstrip(8). If the mitm strips JS then this doesn't help anyway. The users must check the location bar for HTTPS these days, sigh.
 
 =item SESSION_MAX => 48 * 3600    # 2d
 
@@ -91,14 +90,6 @@ How long to wait for activity from ip/mac until a session is marked idle.
 =item KEEP_OLD_STATE_PERIOD => 1 * 60 * 60,  # 1h
 
 How long to keep idle session records on disk for fast reconnect with proper ip/mac/cookie match.
-
-=item USE_FPING => ON  # use fping to trigger idle clients
-
-Use fping(8) to trigger idle clients.
-
-=item FPING_OPTIONS => [qw(-c 1 -i 1 -t 1 -q)]   # SuSe default
-
-fping(8) options for current Linux distribution.
 
 =back
 
@@ -203,13 +194,11 @@ my %pre_defaults = (
     RUN_USER  => 'wwwrun',
     RUN_GROUP => 'www',
 
-    SECURE_COOKIE         => ON,
+    SSL_REQUIRED          => ON,
     SESSION_MAX           => 2 * 24 * 60 * 60,    # 2 days
     KEEP_OLD_STATE_PERIOD => 1 * 60 * 60,         # 1h
 
     IDLE_TIME     => 10 * 60,                     # 10min before set to idle
-    USE_FPING     => ON,                          # trigger idle clients
-    FPING_OPTIONS => [qw(-c 1 -i 1 -t 1 -q)],     # SuSe default
 
     I18N_LANGUAGES     => [ 'en', ],
     I18N_FALLBACK_LANG => 'en',
@@ -278,10 +267,6 @@ $_priv_post_defaults = sub {
 
     DEBUG "add post_parse config default values, if needed";
 
-    unless ( exists $cfg_hash->{IPTABLES}{ipset_version} ) {
-        $cfg_hash->{IPTABLES}{ipset_version} = $self->fw_ipset_version();
-    }
-
     unless ( exists $cfg_hash->{LOCK_FILE} ) {
         $cfg_hash->{LOCK_FILE} =
           catfile( $cfg_hash->{SESSIONS_DIR}, 'capo-ctl.lock' );
@@ -328,6 +313,10 @@ $_priv_check_cfg = sub {
         ERROR 'missing ADMIN_SECRET in cfg file';
     }
 
+    unless ( $cfg_hash->{SSL_REQUIRED} ) {
+        ERROR 'set SSL_REQUIRED for production in cfg file';
+    }
+
     unless ( $cfg_hash->{IPTABLES}{capture_if} ) {
         ERROR "missing 'capture_if' in cfg file";
     }
@@ -355,7 +344,7 @@ Karl Gaissmaier, C<< <gaissmai at cpan.org> >>
 
 =head1 LICENSE AND COPYRIGHT
 
-Copyright 2010-2012 Karl Gaissmaier, all rights reserved.
+Copyright 2010-2013 Karl Gaissmaier, all rights reserved.
 
 This distribution is free software; you can redistribute it and/or modify it
 under the terms of either:

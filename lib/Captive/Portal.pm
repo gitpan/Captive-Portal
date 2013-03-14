@@ -3,7 +3,7 @@ package Captive::Portal;
 use strict;
 use warnings;
 
-our $VERSION = '3.13';
+our $VERSION = '4.09';
 
 =head1 NAME
 
@@ -60,19 +60,17 @@ The HTTP-server redirects the HTTP-request by a rewrite rule to an HTTPS-request
 
 The I<capo.fcgi> script, fired due to this redirected request, offers a splash/login page. After successful login the firewall is dynamically changed to allow this clients IP/MAC tuple for internet access by ipset(8):
 
-    ipset --add capo_sessions_ipset CLIENT_IP,CLIENT_MAC
+    ipset add capo_sessions_ipset CLIENT_IP,CLIENT_MAC
 
 =item 5.  SESSION LOGOUT
 
 The capo.fcgi script offers a status/logout page. After successful logout the firewall is dynamically changed to disallow this IP/MAC tuple for internet access.
 
-    ipset --del capo_sessions_ipset CLIENT_IP
+    ipset del capo_sessions_ipset CLIENT_IP
 
 =item 6. SESSION IDLE
 
-A cronjob fires periodically the capo-ctl.pl script checking for idle sessions. Idle means, the client didn't send any packet for a period of time (cfg param: IDLE_TIME = 10min). Before a session is put into IDLE state the client is once pinged.
-
-It is a design goal not requiring JavaScript on clients!
+A cronjob fires periodically the capo-ctl.pl script checking for idle or malformed sessions. Idle means, the client didn't send any packet for a period of time (cfg param: IDLE_TIME = 10min). Clients sending packets are registered via iptables/ipset in the capo_activity_ipset.
 
 =item 7. COMFORTABLE SESSION REACTIVATION
 
@@ -82,20 +80,7 @@ For a short period of time (cfg param: KEEP_OLD_STATE_PERIOD = 1h) the session i
 
 =head1 INSTALLATION
 
-Please see the INSTALL file in this distribution. As a minimum please be aware of the following access restrictions:
-
-Captive::Portal needs access to iptables(8) and ipset(8) to change the firewall-rules on request. You must add the following rule (or similar) to the sudoers file, depending on the username of your http daemon:
-
- WWW_USER ALL=NOPASSWD: /PATH/TO/iptables, /PATH/TO/ipset
-
-If you use fping(8) (see USE_FPING config parameter) to trigger idle sessions before going idle you must add fping to the sudoers file like ipset and iptables, regardless of the suid bit on fping, since we need special timing flags available only for root:
-
- WWW_USER ALL=NOPASSWD: /PATH/TO/iptables, /PATH/TO/ipset, /PATH/TO/fping
-
-The default $SESSIONS_DIR is set to '/var/cache/capo'.
-
-WWW_USER must be the owner of this dir with write permissions!
-
+Please see the INSTALL file in this distribution.
 
 =head1 CONFIGURATION
 
@@ -197,7 +182,7 @@ sub new {
 # run is the entry point for any http request
 #
 sub run {
-    my $self      = shift; # CaPo object
+    my $self = shift;    # CaPo object
 
     my $query = shift or LOGDIE "run(): missing param 'query'\n";
     my $path_info   = $query->path_info   || '';
@@ -216,27 +201,28 @@ sub run {
     my $error;
     try {
 
-	########
+        ########
         # reset this requests context with current request values
-	#
+        #
         $self->{CTX}            = {};
         $self->{CTX}{QUERY}     = $query;
         $self->{CTX}{PATH_INFO} = $path_info;
 
         $self->{CTX}{HEADER} = $query->header(
             -type    => 'text/html',
-            -charset => 'UTF-8'
+            -charset => 'UTF-8',
         );
         $self->{CTX}{BODY} = '';
         $self->{CTX}{LANG} = $self->choose_language;
         DEBUG( 'choosen language: ' . $self->{CTX}{LANG} );
 
-        $self->{CTX}{TMPL_VARS} = {};
-        $self->{CTX}{TMPL_VARS}{version} = $VERSION;
+        $self->{CTX}{TMPL_VARS}               = {};
+        $self->{CTX}{TMPL_VARS}{version}      = $VERSION;
+        $self->{CTX}{TMPL_VARS}{ssl_required} = $self->cfg->{SSL_REQUIRED};
 
-	########
-	# start the dispatcher for this request
-	#
+        ########
+        # start the dispatcher for this request
+        #
         $self->dispatch;
     }
     catch { $error = $_ };
@@ -333,6 +319,11 @@ sub dispatch {
     # ok, got current session or created new on the fly
     $self->{CTX}{SESSION} = $session;
 
+    # missing SSL detected by JS, recorded from client via ajax
+    # check logfile for maybe man-in-the-middle attacks
+    return $self->no_ssl_detected
+      if exists $query->Vars->{no_ssl};
+
     # login requested
     return $self->login
       if exists $query->Vars->{login};
@@ -362,7 +353,6 @@ sub dispatch {
     return $self->splash_view;
 }
 
-
 ##############################################
 # no client MAC address found, show respective page
 # we need client IP/MAC address tuple for login
@@ -377,9 +367,55 @@ sub no_mac_view {
 
     my $template = "view/$self->{CTX}{LANG}/nomac.tt";
 
-    $self->{template}
-      ->process( $template, $self->{CTX}{TMPL_VARS}, $output )
+    $self->{template}->process( $template, $self->{CTX}{TMPL_VARS}, $output )
       or LOGDIE $self->{template}->error . "\n";
+}
+
+##############################################
+# no ssl encryption recorded by client via ajax
+#
+sub no_ssl_detected {
+    my $self = shift;
+
+    DEBUG('running NO_SSL handler ...');
+
+    my $query   = $self->{CTX}{QUERY};
+    my $session = $self->{CTX}{SESSION};
+
+    my $ip  = $session->{IP}  || '';
+    my $mac = $session->{MAC} || '';
+
+    # value is victim or aggressor
+    my $role = $query->Vars->{no_ssl};
+
+    $self->{CTX}{HEADER} = $query->header(
+        -type    => 'text/plain',
+        -charset => 'UTF-8',
+
+        # maybe cross-domain-request from http -> https
+        -access_control_allow_origin => '*',
+    );
+
+    if ( $role eq 'victim' ) {
+
+        # JS ajax call via https
+        ERROR("maybe MITM victim IP/MAC: '$ip/$mac'");
+        $self->{CTX}{BODY} = $self->gettext('msg_007');
+    }
+    elsif ( $role eq 'mitm' ) {
+
+        # JS ajax call via http,
+        # proxied from aggressor via https
+        ERROR("maybe MITM aggressor IP/MAC: '$ip/$mac'");
+        $self->{CTX}{BODY} = '';
+    }
+    else {
+
+        # logic error
+        ERROR("MITM unknown role from JS: '$role'");
+    }
+
+    return;
 }
 
 ##############################################
@@ -395,13 +431,12 @@ sub splash_view {
 
     my $template = "view/$self->{CTX}{LANG}/splash.tt";
 
-    $self->{template}
-      ->process( $template, $self->{CTX}{TMPL_VARS}, $output )
+    $self->{template}->process( $template, $self->{CTX}{TMPL_VARS}, $output )
       or LOGDIE $self->{template}->error . "\n";
 }
 
 ##############################################
-# CLIENT API: client session autmatically reactivated by matching
+# CLIENT API: client session automatically reactivated by matching
 # IP/MAC tuple and cookie, show active page with
 # proper informational message
 #
@@ -424,8 +459,8 @@ sub idle_view {
     my $ip       = $session->{IP};
     my $mac      = $session->{MAC};
 
-    $session->{STATE}      = 'active';
-    $session->{STOP_TIME}  = '';
+    $session->{STATE}     = 'active';
+    $session->{STOP_TIME} = '';
 
     # EXCL lock, change ipset and session in one transaction
     {
@@ -436,8 +471,8 @@ sub idle_view {
             timeout  => 3_000_000,    # 3_000_000 us = 3s
         );
 
-	# remove possible ipset-entry due to some race condition
-        try { $self->fw_stop_session( $ip ) } catch { };
+        # remove possible ipset-entry due to some race condition
+        try { $self->fw_stop_session($ip) } catch {};
 
         $self->fw_start_session( $ip, $mac );
         $self->write_session_handle( $lock_handle, $session );
@@ -457,7 +492,7 @@ sub idle_view {
 # after idle
 #
 sub active_view {
-    my $self    = shift;
+    my $self = shift;
 
     # this requests parameters are in the context slot
     my $query   = $self->{CTX}{QUERY};
@@ -470,8 +505,7 @@ sub active_view {
 
     my $template = "view/$self->{CTX}{LANG}/active.tt";
 
-    $self->{template}
-      ->process( $template, $self->{CTX}{TMPL_VARS}, $output )
+    $self->{template}->process( $template, $self->{CTX}{TMPL_VARS}, $output )
       or LOGDIE $self->{template}->error . "\n";
 
     DEBUG "create http header with session cookie";
@@ -559,18 +593,18 @@ sub login {
 
     # EXCL lock, change ipset and session in one transaction
     {
-	my $lock_handle = $self->get_session_lock_handle(
-	    key      => $ip,
-	    shared   => 0,
-	    blocking => 1,
-	    timeout  => 3_000_000,    # 3_000_000 us = 3s
-	);
+        my $lock_handle = $self->get_session_lock_handle(
+            key      => $ip,
+            shared   => 0,
+            blocking => 1,
+            timeout  => 3_000_000,    # 3_000_000 us = 3s
+        );
 
-	# remove possible ipset-entry due to some race condition
-        try { $self->fw_stop_session( $ip ) } catch { };
+        # remove possible ipset-entry due to some race condition
+        try { $self->fw_stop_session($ip) } catch {};
 
         $self->fw_start_session( $ip, $mac );
-	$self->write_session_handle( $lock_handle, $session );
+        $self->write_session_handle( $lock_handle, $session );
     }
 
     INFO "$username/$ip/$mac -> login, User-Agent: $user_agent";
@@ -617,14 +651,14 @@ sub logout {
 
     # EXCL lock, change ipset and session in one transaction
     {
-	my $lock_handle = $self->get_session_lock_handle(
-	    key      => $ip,
-	    shared   => 0,
-	    blocking => 1,
-	    timeout  => 3_000_000,    # 3_000_000 us = 3s
-	);
+        my $lock_handle = $self->get_session_lock_handle(
+            key      => $ip,
+            shared   => 0,
+            blocking => 1,
+            timeout  => 3_000_000,    # 3_000_000 us = 3s
+        );
 
-	$self->write_session_handle( $lock_handle, $session );
+        $self->write_session_handle( $lock_handle, $session );
         $self->fw_stop_session($ip);
     }
 
@@ -643,7 +677,7 @@ sub logout {
 # a detail status page
 #
 sub summary_status_view {
-    my $self  = shift;
+    my $self = shift;
 
     # this requests parameters are in the context slot
     my $query = $self->{CTX}{QUERY};
@@ -669,6 +703,8 @@ sub summary_status_view {
     }
 
     my $summary = {};
+
+    # record session states
     foreach my $key ( $self->list_sessions_from_disk ) {
 
         # fetch session data
@@ -708,14 +744,17 @@ sub summary_status_view {
     $self->{CTX}{TMPL_VARS}{stopped}++
       unless defined $self->fw_status;
 
+    # record seen active clients behind capo firewall
+    $self->{CTX}{TMPL_VARS}{client_candidates} =
+      scalar keys %{ $self->fw_list_activity };
+
     $self->{CTX}{TMPL_VARS}{query}   = $query;
     $self->{CTX}{TMPL_VARS}{summary} = $summary;
 
     my $output   = \$self->{CTX}{BODY};
     my $template = "view/$self->{CTX}{LANG}/summary_status.tt";
 
-    $self->{template}
-      ->process( $template, $self->{CTX}{TMPL_VARS}, $output )
+    $self->{template}->process( $template, $self->{CTX}{TMPL_VARS}, $output )
       or LOGDIE $self->{template}->error . "\n";
 
     return;
@@ -725,7 +764,7 @@ sub summary_status_view {
 # ADMIN API: show detail status page
 #
 sub detail_status_view {
-    my $self  = shift;
+    my $self = shift;
 
     # this requests parameters are in the context slot
     my $query = $self->{CTX}{QUERY};
@@ -804,12 +843,13 @@ sub detail_status_view {
     # check sort params
 
     my $sort_reverse;
-    if ($query->param('flip_sort_order')) {
-	$query->delete('flip_sort_order');
-	undef $sort_reverse;
-    } else {
-	$query->param('flip_sort_order', 1);
-	$sort_reverse = 1;
+    if ( $query->param('flip_sort_order') ) {
+        $query->delete('flip_sort_order');
+        undef $sort_reverse;
+    }
+    else {
+        $query->param( 'flip_sort_order', 1 );
+        $sort_reverse = 1;
     }
 
     DEBUG "sort direction is reverse" if $sort_reverse;
@@ -844,6 +884,10 @@ sub detail_status_view {
     $self->{CTX}{TMPL_VARS}{stopped}++
       unless defined $self->fw_status;
 
+    # record seen active clients behind capo firewall
+    $self->{CTX}{TMPL_VARS}{client_candidates} =
+      scalar keys %{ $self->fw_list_activity };
+
     $self->{CTX}{TMPL_VARS}{query}    = $query;
     $self->{CTX}{TMPL_VARS}{summary}  = $summary;
     $self->{CTX}{TMPL_VARS}{sessions} = \@filtered_sessions;
@@ -876,7 +920,7 @@ sub detail_status_view {
 # ADMIN API: show current active session number
 #
 sub is_running_view {
-    my $self  = shift;
+    my $self = shift;
 
     # this requests parameters are in the context slot
     my $query = $self->{CTX}{QUERY};
@@ -889,8 +933,7 @@ sub is_running_view {
     my $session_count = $self->fw_status;
 
     if ( defined $session_count ) {
-        $self->{CTX}{BODY} =
-          "RUNNING $session_count active sessions";
+        $self->{CTX}{BODY} = "RUNNING $session_count active sessions";
     }
     else {
         $self->{CTX}{BODY} = "STOPPED";
@@ -898,7 +941,6 @@ sub is_running_view {
 
     return;
 }
-
 
 ##############################################
 # low level error page without template system
@@ -976,7 +1018,7 @@ Karl Gaissmaier, C<< <gaissmai at cpan.org> >>
 
 =head1 LICENSE AND COPYRIGHT
 
-Copyright 2010-2012 Karl Gaissmaier, all rights reserved.
+Copyright 2010-2013 Karl Gaissmaier, all rights reserved.
 
 This distribution is free software; you can redistribute it and/or modify it
 under the terms of either:

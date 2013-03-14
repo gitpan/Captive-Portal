@@ -2,10 +2,11 @@
 abstract: 'Perl based solution for controlled network access'
 author:
   - 'Karl Gaissmaier <gaissmai (at) cpan.org>'
+build_requires: {}
 configure_requires:
   Module::Build: 0
 dynamic_config: 1
-generated_by: 'Module::Build version 0.3607'
+generated_by: 'Module::Build version 0.38, CPAN::Meta::Converter version 2.110440'
 license: perl
 meta-spec:
   url: http://module-build.sourceforge.net/META-spec-v1.4.html
@@ -14,31 +15,31 @@ name: Captive-Portal
 provides:
   Captive::Portal:
     file: lib/Captive/Portal.pm
-    version: 3.13
+    version: 4.09
   Captive::Portal::LockHandle:
     file: lib/Captive/Portal/LockHandle.pm
-    version: 3.13
+    version: 4.09
   Captive::Portal::Role::AuthenSimple:
     file: lib/Captive/Portal/Role/AuthenSimple.pm
-    version: 3.13
+    version: 4.09
   Captive::Portal::Role::Config:
     file: lib/Captive/Portal/Role/Config.pm
-    version: 3.13
+    version: 4.09
   Captive::Portal::Role::Firewall:
     file: lib/Captive/Portal/Role/Firewall.pm
-    version: 3.13
+    version: 4.09
   Captive::Portal::Role::I18N:
     file: lib/Captive/Portal/Role/I18N.pm
-    version: 3.13
+    version: 4.09
   Captive::Portal::Role::Session:
     file: lib/Captive/Portal/Role/Session.pm
-    version: 3.13
+    version: 4.09
   Captive::Portal::Role::Utils:
     file: lib/Captive/Portal/Role/Utils.pm
-    version: 3.13
+    version: 4.09
   Captive::Portal::TestServer:
     file: lib/Captive/Portal/TestServer.pm
-    version: 3.13
+    version: 4.09
 recommends:
   Authen::Simple::RADIUS: 0
   HTTP::Server::Simple::CGI: 0
@@ -60,4 +61,4 @@ requires:
   parent: 0
 resources:
   license: http://dev.perl.org/licenses/
-version: 3.13
+version: 4.09

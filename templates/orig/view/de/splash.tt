@@ -12,7 +12,12 @@
  <p class="error">[% msg_text %]</p>
  [% END -%]
 
- <form action="" method="post" accept-charset="UTF-8">
+ [%- IF ssl_required %]
+ <script src="/orig/js/jquery.js" type="text/javascript"></script>
+ <script src="/orig/js/splash.js" type="text/javascript"></script>
+ [% END -%]
+
+ <form id="login-form" action="" method="post" accept-charset="UTF-8">
   <fieldset>
    <label for="username">Benutzer:</label>
    <br />
@@ -24,7 +29,12 @@
    <input type="password" id="password" name="password" />
    <br />
    <br />
+   <p class="error" id='hint'>WICHTIG: Vergewissern Sie sich, dass die Adresszeile mit
+   <strong>https</strong> beginnt bevor Sie ihre Nutzerdaten absenden!
+   <br />
+   <br />
    <input type="submit" value="Anmelden" id="login" name="login" />
+   </p>
   </fieldset>
  </form>
 

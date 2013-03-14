@@ -3,7 +3,7 @@
 use strict;
 use warnings;
 
-our $VERSION = '3.13';
+our $VERSION = '4.09';
 
 =head1 NAME
 
@@ -15,15 +15,19 @@ Don't use it in production, SSL/TLS and FCGI not supported.
 
 =head1 SYNOPSIS
 
- test-server.pl [-p -port ] [- f capo.cfg] [-l log4perl.cfg]
+ test-server.pl [-ssl] [-p -port ] [- f capo.cfg] [-l log4perl.cfg]
 
 =head1 OPTIONS
 
 =over 4
 
+=item B<--ssl>
+
+Listen for HTTPS requests.
+
 =item B<--port> 3333
 
-HTTP listen port. If not defined listens on port 3333
+HTTP listen port. If not defined listens on port 3333 or 4433 if --ssl is defined.
 
 =item B<--file> capo.cfg
 
@@ -67,13 +71,19 @@ my $log4perl =
   || -e "$Bin/../etc/local/log4perl.conf" && "$Bin/../etc/local/log4perl.conf"
   || -e "$Bin/../etc/log4perl.conf" && "$Bin/../etc/log4perl.conf";
 
-my $port = 3333;
+my $ssl;
+my $port;
 
 GetOptions(
+    'ssl'        => \$ssl,
     'loggfile=s' => \$log4perl,
     'file=s'     => \$cfg_file,
     'port=i'     => \$port,
 ) or usage();
+
+unless ($port) {
+    $ssl ? ($port = 4433) : ($port = 3333);
+}
 
 usage('configfile missing and CAPTIVE_PORTAL_CONFIG not set')
   unless $cfg_file;
@@ -89,17 +99,22 @@ DEBUG("create new Captive::Portal object ...");
 my $capo = Captive::Portal->new( cfg_file => $cfg_file );
 
 DEBUG("create new Captive::Portal::TestServer object ...");
-my $server = Captive::Portal::TestServer->new($port);
-
+my $server = Captive::Portal::TestServer->new($ssl);
+$server->port($port);
+$server->host('127.0.0.1');
 
 $server->{capo}        = $capo;
 $server->{static_root} = $capo->cfg->{DOCUMENT_ROOT};
 
-INFO("You can connect the server on Port: $port");
+INFO(   'You can connect the server on: '
+      . ( $ssl ? 'https://' : 'http://' )
+      . $server->host . ':'
+      . $server->port );
+
 $server->run;
 
 sub usage {
-    die "$Script [-p port] [-f capo.cfg] [-l log4perl.cfg]\n";
+    die "$Script [-ssl] [-p port] [-f capo.cfg] [-l log4perl.cfg]\n";
 }
 
 =head1 AUTHOR
@@ -108,7 +123,7 @@ Karl Gaissmaier, C<< <gaissmai at cpan.org> >>
 
 =head1 LICENSE AND COPYRIGHT
 
-Copyright 2010-2012 Karl Gaissmaier, all rights reserved.
+Copyright 2010-2013 Karl Gaissmaier, all rights reserved.
 
 This distribution is free software; you can redistribute it and/or modify it
 under the terms of either:

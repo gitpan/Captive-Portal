@@ -22,12 +22,10 @@ return {
     #
     #  SESSIONS_DIR          => "/var/cache/$APP_NAME",
     #
-    #  SECURE_COOKIE         => ON,
+    #  SSL_REQUIRED          => ON,
     #  SESSION_MAX           => 48 * 3600,    # 2d
     #  KEEP_OLD_STATE_PERIOD => 1 * 60 * 60,  # 1h
     #  IDLE_TIME             => 60 * 10,      # 10 min before set to idle
-    #  USE_FPING             => ON,           # use fping to check idle clients
-    #  FPING_OPTIONS         => [qw(-c 1 -i 1 -t 1 -q)],   # SuSe default
     #
     ########################################################
     #
@@ -96,7 +94,7 @@ return {
           tcp => [
             {    # WWW
               ports   => [ 80, 443 ],
-              servers => [ 'www.acme.org.', ],
+              servers => [ 'ocsp.server.acme.org', ],
             },
 
             {    # LDAP
@@ -185,6 +183,11 @@ return {
         msg_006 => {
             en => 'Idle-session reestablished due to valid cookie.',
             de => 'Abgelaufene Sitzung durch gültiges Cookie erneuert.',
+        },
+
+        msg_007 => {
+            en => 'SECURITY ALERT: Please contact your helpdesk!',
+            de => 'SICHERHEITSALARM: Bitte kontaktieren Sie den Helpdesk!',
         },
       },
 

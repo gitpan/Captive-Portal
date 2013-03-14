@@ -20,7 +20,7 @@ like( $error, qr/BOILERPLATE/i, 'croaks if config file is a BOILERPLATE' );
 ok( $capo = Captive::Portal->new( cfg_file => 't/etc/ok.pl' ),
     'successfull parse t/etc/ok.pl' );
 ok( $capo->cfg->{SESSIONS_DIR}, 'SESSIONS_DIR is set');
-ok( $capo->cfg->{IPTABLES}{ipset_version}, 'ipset_version is set');
+ok( $capo->cfg->{IDLE_TIME}, 'IDLE_TIME is set');
 
 
 undef $error;

@@ -2,6 +2,8 @@
 
 <div class="span-4">
 
+ <p class="info">Geräte momentan hinter der Firewall: [% client_candidates %]</p>
+
  <table>
   <caption>Übersicht</caption>
   <thead>
