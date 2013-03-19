@@ -1,5 +1,8 @@
 Revision history for Captive::Portal
 
+4.10    Tue, 19 Mar 2013 11:35:41 +0100
+	* cpan relase had an untested pod_coverage error, sigh
+
 4.09    Wed, 13 Mar 2013 11:29:04 +0100
 	* get rid of SUID, use capabilities
 

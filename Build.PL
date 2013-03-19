@@ -18,6 +18,19 @@ my $my_capo_class = Module::Build->subclass(
 
     use ExtUtils::Install qw();
 
+    sub ACTION_dist {
+      my ($self) = @_;
+
+
+      # be sure we make RELEASE_TESTING=1 on Build dist
+      { 
+	  local $ENV{RELEASE_TESTING} = 1;
+	  $self->dispatch('test');
+      }
+
+      $self->SUPER::ACTION_dist;
+    }
+
     sub ACTION_install {
         my $self = shift;
 

@@ -41,6 +41,7 @@ my $trustme = [
     'login',
     'logout',
     'no_mac_view',
+    'no_ssl_detected',
     'splash_view',
     'summary_status_view',
 

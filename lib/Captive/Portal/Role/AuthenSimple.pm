@@ -9,7 +9,7 @@ Captive::Portal::Role::AuthenSimple - Authen::Simple adapter for Captive::Portal
 
 =cut
 
-our $VERSION = '4.09';
+our $VERSION = '4.10';
 
 use Log::Log4perl qw(:easy);
 use Authen::Simple qw();
